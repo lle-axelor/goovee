@@ -3,7 +3,7 @@ import {getWhereClauseForEntity} from '@/utils/filters';
 import {PartnerKey, User} from '@/types';
 
 // ---- LOCAL IMPORT ---- //
-import {findQuotation} from '@/app/[tenant]/[workspace]/(subapps)/quotations/common/orm/quotations';
+import {findQuotation} from '@/orm/quotations';
 
 export async function getQuotationRecord({
   id,

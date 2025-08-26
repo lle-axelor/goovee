@@ -23,7 +23,7 @@ import {TENANT_HEADER} from '@/middleware';
 import {getWhereClauseForEntity} from '@/utils/filters';
 
 // ---- LOCAL IMPORTS ---- //
-import {findQuotation} from '@/subapps/quotations/common/orm/quotations';
+import {findQuotation} from '@/orm/quotations';
 
 export async function confirmQuotation({
   workspaceURL,

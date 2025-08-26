@@ -12,7 +12,7 @@ import {getWhereClauseForEntity} from '@/utils/filters';
 
 // ---- LOCAL IMPORTS ---- //
 import Content from './content';
-import {findQuotation} from '@/subapps/quotations/common/orm/quotations';
+import {findQuotation} from '@/orm/quotations';
 import {QuotationSkeleton} from '@/subapps/quotations/common/ui/components';
 
 type PageProps = {

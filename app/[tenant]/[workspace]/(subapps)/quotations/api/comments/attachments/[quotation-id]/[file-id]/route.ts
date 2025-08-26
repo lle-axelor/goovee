@@ -9,7 +9,7 @@ import {PartnerKey} from '@/types';
 import {findFile, streamFile} from '@/utils/download';
 import {getWhereClauseForEntity} from '@/utils/filters';
 import {workspacePathname} from '@/utils/workspace';
-import {findQuotation} from '../../../../../common/orm/quotations';
+import {findQuotation} from '@/orm/quotations';
 
 export async function GET(
   request: NextRequest,

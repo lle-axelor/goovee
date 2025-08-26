@@ -457,38 +457,3 @@ export const fetchComments: FetchComments = async props => {
     };
   }
 };
-
-export const fetchEvent = async ({
-  slug,
-  workspaceURL,
-}: {
-  slug: string;
-  workspaceURL: string;
-}) => {
-  if (!slug) return error(await t('Missing event slug'));
-  if (!workspaceURL) return error(await t('Workspace URL is missing'));
-
-  const tenantId = headers().get(TENANT_HEADER);
-  if (!tenantId) return error(await t('Tenant ID is missing!'));
-
-  const session = await getSession();
-  const user = session?.user;
-
-  const workspace = await findWorkspace({user, url: workspaceURL, tenantId});
-  if (!workspace) return error(await t('Invalid workspace'));
-
-  const subappValidation = await validate([
-    withSubapp(SUBAPP_CODES.events, workspaceURL, tenantId),
-  ]);
-  if (subappValidation.error) return subappValidation;
-
-  const event = await findEvent({
-    slug,
-    workspace,
-    tenantId,
-    user,
-  });
-  if (!event) return error(await t('Record not found'));
-
-  return {success: true, data: clone(event)};
-};

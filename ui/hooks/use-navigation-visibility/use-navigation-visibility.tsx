@@ -6,7 +6,7 @@ import {useSession} from 'next-auth/react';
 
 // ---- CORE IMPORTS ---- //
 import {SUBAPP_CODES} from '@/constants';
-import {fetchEvent} from '@/app/[tenant]/[workspace]/(subapps)/events/common/actions/actions';
+import {fetchEvent} from '@/actions/events';
 import {useWorkspace} from '@/app/[tenant]/[workspace]/workspace-context';
 
 /**

@@ -22,7 +22,7 @@ import {getWhereClauseForEntity} from '@/utils/filters';
 import {PartnerKey} from '@/types';
 
 // ---- LOCAL IMPORTS ---- //
-import {findQuotation} from '../orm/quotations';
+import {findQuotation} from '@/orm/quotations';
 
 export const createComment: CreateComment = async formData => {
   const session = await getSession();
