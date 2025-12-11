@@ -167,6 +167,7 @@ export interface PortalAppConfig extends Model {
   isCompanyOrAddressRequired?: boolean;
   payInAdvance?: boolean;
   advancePaymentPercentage?: BigDecimal;
+  chatDisplayTypeSelect?: number;
 }
 
 export interface PortalApp extends Model {
