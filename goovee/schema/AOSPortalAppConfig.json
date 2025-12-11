@@ -358,6 +358,10 @@
     {
       "name": "advancePaymentPercentage",
       "type": "Decimal"
+    },
+    {
+      "name": "isCreateMattermostUser",
+      "type": "Boolean"
     }
   ]
 }
