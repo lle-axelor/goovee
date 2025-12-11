@@ -362,6 +362,11 @@
     {
       "name": "isCreateMattermostUser",
       "type": "Boolean"
+    },
+    {
+      "type": "Int",
+      "name": "chatDisplayTypeSelect",
+      "column": "chat_display_type_select"
     }
   ]
 }
