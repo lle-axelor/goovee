@@ -123,7 +123,7 @@ export const portalAppConfigFields: SelectOptions<AOSPortalAppConfig> = {
   isCompanyOrAddressRequired: true,
   payInAdvance: true,
   advancePaymentPercentage: true,
-  chatDisplayTypeSelect: true
+  chatDisplayTypeSelect: true,
 };
 
 export async function findWorkspaceMembers({
