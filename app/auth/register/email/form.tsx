@@ -54,7 +54,7 @@ const formSchema = z
     indentificationNumber: z.string(),
     companyNumber: z.string(),
     firstName: z.string(),
-    otp: z.string().min(1, {message: i18n.t('OTP is required')}),
+    otp: z.string().min(1, {message: i18n.t('Validation code is required')}),
     name: z.string(),
     email: z.string().min(1, {message: i18n.t('Email is required')}),
     phone: z.string(),
@@ -102,16 +102,38 @@ const formSchema = z
   );
 
 export default function SignUp({workspace}: {workspace?: PortalWorkspace}) {
+  const {data: session} = useSession();
+  const user = session?.user;
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const searchQuery = new URLSearchParams(searchParams).toString();
+  const tenantId = searchParams.get(SEARCH_PARAMS.TENANT_ID);
+  const typeParam = searchParams.get(SEARCH_PARAMS.USER_TYPE);
+  const isValidTypeParam =
+    typeParam === UserType.company || typeParam === UserType.individual;
+  const isTypeLocked = isValidTypeParam;
+  const defaultType = isValidTypeParam
+    ? (typeParam as UserType)
+    : UserType.individual;
+
+  const companyNameParam = searchParams.get(SEARCH_PARAMS.COMPANY_NAME);
+  const identificationNumberParam = searchParams.get(
+    SEARCH_PARAMS.IDENTIFICATION_NUMBER,
+  );
+  const emailParam = searchParams.get(SEARCH_PARAMS.EMAIL);
+  const isCompanyType = defaultType === UserType.company;
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      type: UserType.individual,
-      companyName: '',
-      indentificationNumber: '',
+      type: defaultType,
+      companyName: (isCompanyType && companyNameParam) || '',
+      indentificationNumber: (isCompanyType && identificationNumberParam) || '',
       companyNumber: '',
       firstName: '',
       name: '',
-      email: '',
+      email: (isCompanyType && emailParam) || '',
       otp: '',
       phone: '',
       password: '',
@@ -124,14 +146,6 @@ export default function SignUp({workspace}: {workspace?: PortalWorkspace}) {
       linkedInLink: '',
     },
   });
-
-  const {data: session} = useSession();
-  const user = session?.user;
-
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const searchQuery = new URLSearchParams(searchParams).toString();
-  const tenantId = searchParams.get(SEARCH_PARAMS.TENANT_ID);
   const {timeRemaining, isExpired, reset} = useCountDown(0);
 
   const showDirectoryControls = form.watch(
@@ -266,9 +280,6 @@ export default function SignUp({workspace}: {workspace?: PortalWorkspace}) {
       <div className="bg-white py-4 px-6 space-y-4">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <h2 className="text-xl font-medium">
-              {i18n.t('Personal information')}
-            </h2>
             <FormField
               control={form.control}
               name="type"
@@ -277,7 +288,8 @@ export default function SignUp({workspace}: {workspace?: PortalWorkspace}) {
                   <FormLabel>{i18n.t('Type')}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value?.toString()}>
+                    defaultValue={field.value?.toString()}
+                    disabled={isTypeLocked}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue
@@ -365,34 +377,31 @@ export default function SignUp({workspace}: {workspace?: PortalWorkspace}) {
               </>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({field}) => (
-                  <FormItem>
-                    <FormLabel>{i18n.t('First name')}</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        value={field.value}
-                        placeholder={i18n.t('Enter first Name')}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {!isCompany ? (
+            {!isCompany && (
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({field}) => (
+                    <FormItem>
+                      <FormLabel>{i18n.t('First name')}</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value}
+                          placeholder={i18n.t('Enter first Name')}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="name"
                   render={({field}) => (
                     <FormItem>
-                      <FormLabel>
-                        {i18n.t('Last name')}
-                        {!isCompany && '*'}
-                      </FormLabel>
+                      <FormLabel>{i18n.t('Last name')}*</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
@@ -404,10 +413,8 @@ export default function SignUp({workspace}: {workspace?: PortalWorkspace}) {
                     </FormItem>
                   )}
                 />
-              ) : (
-                <div />
-              )}
-            </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4 items-start">
               <FormField
                 control={form.control}
@@ -430,32 +437,32 @@ export default function SignUp({workspace}: {workspace?: PortalWorkspace}) {
                 className={cn('grid grid-cols-2 gap-4 items-end', {
                   'items-center': form.formState.errors.otp,
                 })}>
+                <Button
+                  variant="outline-success"
+                  type="button"
+                  disabled={!email || !isExpired || !isValidEmail}
+                  onClick={handleGenerateOTP}>
+                  {i18n.t('Generate code')}
+                </Button>
+
                 <FormField
                   control={form.control}
                   name="otp"
                   render={({field}) => (
                     <FormItem>
-                      <FormLabel>{i18n.t('OTP')}*</FormLabel>
+                      <FormLabel>{i18n.t('Validation code')}*</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
                           type="password"
                           value={field.value}
-                          placeholder={i18n.t('Enter OTP')}
+                          placeholder={i18n.t('Enter validation code')}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
-                <Button
-                  variant="outline-success"
-                  type="button"
-                  disabled={!email || !isExpired || !isValidEmail}
-                  onClick={handleGenerateOTP}>
-                  {i18n.t('Generate OTP')}
-                </Button>
               </div>
             </div>
             <div
@@ -463,7 +470,7 @@ export default function SignUp({workspace}: {workspace?: PortalWorkspace}) {
                 hidden: isExpired,
               })}>
               <p>
-                {i18n.t('Resend OTP in ')}
+                {i18n.t('Resend validation code in ')}
                 {timeRemaining.minutes}:{timeRemaining.seconds}
               </p>
             </div>
