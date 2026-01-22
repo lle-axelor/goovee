@@ -74,6 +74,12 @@ export const portalAppConfigFields: SelectOptions<AOSPortalAppConfig> = {
       image: {id: true},
     },
   },
+  hyperlinkList: {
+    select: {
+      link: true,
+      logo: {id: true},
+    },
+  },
   allowGuestEventRegistration: true,
   enableRecommendedNews: true,
   enableSocialMediaSharing: true,
@@ -136,6 +142,7 @@ export const portalAppConfigFields: SelectOptions<AOSPortalAppConfig> = {
   isHomepageDisplayEvents: true,
   isHomepageDisplayMessage: true,
   isHomepageDisplayResources: true,
+  isHomepageDisplayHyperlinks: true,
   homepageHeroTitle: true,
   homepageHeroDescription: true,
   homepageHeroOverlayColorSelect: true,

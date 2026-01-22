@@ -17,6 +17,7 @@ import {Skeleton} from '@/ui/components/skeleton/skeleton';
 import {getFileTypeIcon, getIconColor} from '@/utils/files';
 import {BadgeList} from '@/ui/components/badge-list';
 import {clone} from '@/utils';
+import {cn} from '@/utils/css';
 
 import {EVENT_TYPE} from './(subapps)/events/common/constants';
 import {findEvents} from './(subapps)/events/common/orm/event';
@@ -67,6 +68,10 @@ export async function Home({
 
   const hasContents = showEvents || showForum || showResources;
 
+  const showHyperlinks =
+    workspace.config?.isHomepageDisplayHyperlinks &&
+    (workspace.config?.hyperlinkList?.length ?? 0) > 0;
+
   return (
     <div>
       <HeroSearch
@@ -91,72 +96,87 @@ export async function Home({
         image={imageURL}
       />
 
-      <div className="container my-6 space-y-6 mx-auto">
-        {showNews && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between gap-4">
+      {showNews && (
+        <div className="container my-6 mx-auto space-y-6">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="font-semibold text-xl">{await t('Latest news')}</h2>
+            <Link
+              href={`${workspaceURI}/${SUBAPP_CODES.news}`}
+              className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
+              {await t('View all')} <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <Suspense fallback={<NewsSkeleton />}>
+            <LatestNews
+              workspace={workspace}
+              tenant={tenant}
+              user={user}
+              workspaceURI={workspaceURI}
+            />
+          </Suspense>
+        </div>
+      )}
+
+      {(hasContents || showHyperlinks) && (
+        <div
+          className={cn('container my-6 mx-auto grid grid-cols-1 gap-6', {
+            'lg:grid-cols-[1fr_200px]': showHyperlinks && hasContents,
+          })}>
+          {hasContents && (
+            <div className="space-y-6 min-w-0">
               <h2 className="font-semibold text-xl">
-                {await t('Latest news')}
+                {await t('Latest contents')}
               </h2>
-              <Link
-                href={`${workspaceURI}/${SUBAPP_CODES.news}`}
-                className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
-                {await t('View all')} <ArrowRight className="h-3 w-3" />
-              </Link>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {showEvents && (
+                  <Suspense fallback={<ContentCardSkeleton />}>
+                    <EventsCard
+                      workspace={workspace}
+                      tenant={tenant}
+                      user={user}
+                      workspaceURI={workspaceURI}
+                    />
+                  </Suspense>
+                )}
+                {showForum && (
+                  <Suspense fallback={<ContentCardSkeleton />}>
+                    <ForumCard
+                      workspace={workspace}
+                      tenant={tenant}
+                      user={user}
+                      workspaceURI={workspaceURI}
+                    />
+                  </Suspense>
+                )}
+
+                {showResources && (
+                  <Suspense fallback={<ContentCardSkeleton />}>
+                    <ResourcesCard
+                      workspace={workspace}
+                      tenant={tenant}
+                      user={user}
+                      workspaceURI={workspaceURI}
+                    />
+                  </Suspense>
+                )}
+              </div>
             </div>
-            <Suspense fallback={<NewsSkeleton />}>
-              <LatestNews
+          )}
+
+          {showHyperlinks && (
+            <aside className="space-y-6">
+              <h2 className="font-semibold text-xl">
+                {await t('Useful links')}
+              </h2>
+              <HyperlinkCard
                 workspace={workspace}
-                tenant={tenant}
-                user={user}
                 workspaceURI={workspaceURI}
               />
-            </Suspense>
-          </div>
-        )}
-
-        {hasContents && (
-          <>
-            <h2 className="font-semibold text-xl">
-              {await t('Latest contents')}
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {showEvents && (
-                <Suspense fallback={<ContentCardSkeleton />}>
-                  <EventsCard
-                    workspace={workspace}
-                    tenant={tenant}
-                    user={user}
-                    workspaceURI={workspaceURI}
-                  />
-                </Suspense>
-              )}
-              {showForum && (
-                <Suspense fallback={<ContentCardSkeleton />}>
-                  <ForumCard
-                    workspace={workspace}
-                    tenant={tenant}
-                    user={user}
-                    workspaceURI={workspaceURI}
-                  />
-                </Suspense>
-              )}
-
-              {showResources && (
-                <Suspense fallback={<ContentCardSkeleton />}>
-                  <ResourcesCard
-                    workspace={workspace}
-                    tenant={tenant}
-                    user={user}
-                    workspaceURI={workspaceURI}
-                  />
-                </Suspense>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+            </aside>
+          )}
+        </div>
+      )}
 
       <div className="lg:hidden h-20" />
     </div>
@@ -446,6 +466,37 @@ async function ResourcesCard({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+async function HyperlinkCard({
+  workspace,
+  workspaceURI,
+}: {
+  workspace: PortalWorkspace;
+  workspaceURI: string;
+}) {
+  const hyperlinkList = workspace?.config?.hyperlinkList;
+
+  if (!hyperlinkList?.length) return null;
+
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      {hyperlinkList.map(item => (
+        <a
+          key={item.id}
+          href={item.link || '#'}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+          <img
+            src={`${workspaceURI}/api/hyperlink/${item.id}/logo`}
+            alt=""
+            className="w-full h-auto object-contain"
+          />
+        </a>
+      ))}
+    </div>
   );
 }
 
