@@ -1,148 +1,104 @@
 'use client';
 
+import React from 'react';
+
 // ---- CORE IMPORTS ---- //
-import {useWorkspace} from '@/app/[tenant]/[workspace]/workspace-context';
 import {SUBAPP_CODES} from '@/constants';
 import {i18n} from '@/locale';
-import {Container} from '@/ui/components';
+import {useWorkspace} from '@/app/[tenant]/[workspace]/workspace-context';
 
 // ---- LOCAL IMPORTS ---- //
 import {
-  CUSTOMER_DELIVERY,
-  DOWNLOAD_PDF,
-  INVOICE,
-  ORDER_NUMBER,
-} from '@/subapps/orders/common/constants/orders';
-import {
-  Contact,
-  DownloadButton,
-  ExpandableCard,
-  History,
-  Informations,
-  PaymentMethod,
-  ProductsList,
-  Total,
+  OrderHero,
+  JourneyTimeline,
+  OrderProductsCards,
+  OrderTotalsCard,
+  OrderAddressesCard,
+  SupportCtaCard,
 } from '@/subapps/orders/common/ui/components';
-import {getStatus} from '@/subapps/orders/common/utils/orders';
-import {formatDate} from '@/lib/core/locale/formatters';
+import {mapAxelorStatus} from '@/subapps/orders/common/utils/status';
 import {OrderType} from '@/subapps/orders/common/types/orders';
 
 const Content = ({order, orderType}: {order: any; orderType: OrderType}) => {
+  const {workspaceURI} = useWorkspace();
+
   const {
     saleOrderSeq,
     exTaxTotal,
     inTaxTotal,
     createdOn,
-    shipmentMode,
     statusSelect,
     deliveryState,
     mainInvoicingAddress,
     deliveryAddress,
-    saleOrderLineList,
-    totalDiscount,
+    saleOrderLineList = [],
     id,
-    invoices = [],
-    customerDeliveries = [],
     orderReport,
+    company,
+    clientPartner,
   } = order;
-  const {status, variant} = getStatus(statusSelect, deliveryState);
 
-  const {workspaceURI, tenant} = useWorkspace();
-
-  const hideDiscount = saleOrderLineList?.every(
-    (item: any) => parseFloat(item.discountAmount) === 0,
-  );
+  const status = mapAxelorStatus({statusSelect, deliveryState});
+  const taxRate = pickPrimaryTaxRate(saleOrderLineList);
+  const supportURL = `${workspaceURI}/${SUBAPP_CODES.ticketing}`;
 
   return (
-    <Container title={`${i18n.t(ORDER_NUMBER)} ${saleOrderSeq}`}>
-      <Informations
-        createdOn={createdOn}
-        shipmentMode={shipmentMode}
+    <div className="font-jakarta bg-ink-25">
+      <OrderHero
+        saleOrderSeq={saleOrderSeq}
         status={status}
-        variant={variant}
+        productsCount={saleOrderLineList.length}
+        inTaxTotal={inTaxTotal}
         orderId={id}
-        orderReport={orderReport}
         orderType={orderType}
+        hasOrderReport={Boolean(orderReport)}
       />
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 xl:gap-4">
-        <div className="col-span-12 xl:col-span-9 flex flex-col gap-6">
-          <div className="flex flex-col gap-4  bg-card text-card-foreground p-6 rounded-lg">
-            <Contact
-              mainInvoicingAddress={mainInvoicingAddress}
-              deliveryAddress={deliveryAddress}
+
+      <div className="mx-auto grid w-full max-w-[1100px] grid-cols-1 gap-7 px-6 py-8 lg:grid-cols-[1.5fr_1fr] lg:px-8">
+        <div className="flex flex-col gap-7">
+          <section className="rounded-[14px] border border-ink-100 bg-ink-0 p-6">
+            <header className="mb-5 flex flex-col gap-1">
+              <h2 className="m-0 text-[18px] font-bold tracking-[-0.01em] text-ink-900">
+                {i18n.t('Tracking')}
+              </h2>
+              <p className="m-0 text-[13px] text-ink-500">
+                {i18n.t('Steps of your order')}
+              </p>
+            </header>
+            <JourneyTimeline
+              current={status}
+              createdOn={createdOn}
+              companyName={company?.name}
             />
-            <ProductsList
-              saleOrderLineList={saleOrderLineList}
-              tenant={tenant}
-              hideDiscount={hideDiscount}
-            />
-            {false && <PaymentMethod />}
-          </div>
-          {false && <History />}
+          </section>
+
+          <OrderProductsCards lines={saleOrderLineList} />
         </div>
-        <div className="col-span-12 xl:col-span-3 flex flex-col gap-6">
-          <Total
+
+        <div className="flex flex-col gap-5">
+          <OrderTotalsCard
             exTaxTotal={exTaxTotal}
             inTaxTotal={inTaxTotal}
-            totalDiscount={totalDiscount}
-            hideDiscount={hideDiscount}
+            taxLabel={taxRate ?? undefined}
           />
-
-          {invoices?.length ? (
-            <ExpandableCard title={i18n.t(INVOICE)} initialState={true}>
-              <div className="flex flex-col divide-y divide-border">
-                {invoices.map((record: any) => (
-                  <div key={record.id} className="flex flex-col gap-2 py-2">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 truncate">{record.invoiceId}</div>
-                      <div className="flex-1">
-                        {formatDate(record.createdOn)}
-                      </div>
-                      <div className="flex justify-end">
-                        <DownloadButton
-                          downloadURL={`${workspaceURI}/${SUBAPP_CODES.orders}/api/order/${orderType}/${id}/invoice/${record.id}`}
-                          title={i18n.t(DOWNLOAD_PDF)}
-                          className="border-none p-0"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ExpandableCard>
-          ) : null}
-
-          {customerDeliveries?.length ? (
-            <ExpandableCard
-              title={i18n.t(CUSTOMER_DELIVERY)}
-              initialState={true}>
-              <div className="flex flex-col divide-y divide-border">
-                {customerDeliveries.map((record: any) => (
-                  <div key={record.id} className="flex flex-col gap-2 py-2">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 truncate">
-                        {record.stockMoveSeq}
-                      </div>
-                      <div className="flex-1">
-                        {formatDate(record.createdOn)}
-                      </div>
-                      <div className="flex justify-end">
-                        <DownloadButton
-                          title={i18n.t(DOWNLOAD_PDF)}
-                          downloadURL={`${workspaceURI}/${SUBAPP_CODES.orders}/api/order/${orderType}/${id}/customer-delivery/${record.id}`}
-                          className="border-none p-0"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ExpandableCard>
-          ) : null}
+          <OrderAddressesCard
+            invoicingAddress={mainInvoicingAddress}
+            deliveryAddress={deliveryAddress}
+            partnerName={clientPartner?.fullName}
+          />
+          <SupportCtaCard contactURL={supportURL} companyName={company?.name} />
         </div>
       </div>
-    </Container>
+    </div>
   );
 };
+
+function pickPrimaryTaxRate(lines: any[]): string | null {
+  for (const line of lines) {
+    const tax = line?.taxLineSet?.[0];
+    if (tax?.value) return `${tax.value}%`;
+  }
+  return null;
+}
 
 export default Content;

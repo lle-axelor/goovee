@@ -1,5 +1,6 @@
 import React from 'react';
 import {notFound} from 'next/navigation';
+import {Plus_Jakarta_Sans} from 'next/font/google';
 
 // ---- CORE IMPORTS ---- //
 import {findSubappAccess} from '@/orm/workspace';
@@ -7,6 +8,13 @@ import {getSession} from '@/auth';
 import {workspacePathname} from '@/utils/workspace';
 import {SUBAPP_CODES} from '@/constants';
 import {manager} from '@/tenant';
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-jakarta',
+  display: 'swap',
+});
 
 export default async function Layout(props: {
   params: Promise<{
@@ -41,5 +49,5 @@ export default async function Layout(props: {
 
   if (!subapp) return notFound();
 
-  return <div className="!mb-20 md:mb-0">{children}</div>;
+  return <div className={`${jakarta.variable} !mb-20 md:mb-0`}>{children}</div>;
 }

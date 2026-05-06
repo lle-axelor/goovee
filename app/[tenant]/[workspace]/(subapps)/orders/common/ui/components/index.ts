@@ -10,3 +10,17 @@ export {OrderColumns} from './columns';
 export {ExpandableCard} from './expandable-card';
 export {DownloadButton} from './download-button';
 export {OrderSkeleton} from './order-skeleton';
+export {
+  OrdersSplitView,
+  OrdersList,
+  OrderPreview,
+  OrdersSplitViewSkeleton,
+} from './orders-split-view';
+export {
+  OrderHero,
+  JourneyTimeline,
+  OrderProductsCards,
+  OrderTotalsCard,
+  OrderAddressesCard,
+  SupportCtaCard,
+} from './order-detail';

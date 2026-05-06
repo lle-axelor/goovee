@@ -9,14 +9,14 @@ import {DEFAULT_LIMIT, SUBAPP_CODES} from '@/constants';
 import {manager} from '@/tenant';
 import {clone} from '@/utils';
 import {PartnerKey, User} from '@/types';
-import {TableSkeleton} from '@/ui/components/table';
 import {getWhereClauseForEntity} from '@/utils/filters';
 
 // ---- LOCAL IMPORTS ---- //
 import Content from '@/subapps/orders/[type]/content';
-import {findOrders} from '@/subapps/orders/common/orm/orders';
+import {findOrder, findOrders} from '@/subapps/orders/common/orm/orders';
 import {ORDER} from '@/subapps/orders/common/constants/orders';
 import {OrderType} from '@/subapps/orders/common/types/orders';
+import {OrdersSplitViewSkeleton} from '@/subapps/orders/common/ui/components';
 
 async function Orders({
   params,
@@ -27,7 +27,7 @@ async function Orders({
 }) {
   const {type, tenant: tenantId} = params;
 
-  const {limit, page} = searchParams;
+  const {limit, page, selectedId} = searchParams;
 
   const session = await getSession();
   const user = session?.user as User;
@@ -70,6 +70,13 @@ async function Orders({
     partnerKey: PartnerKey.CLIENT_PARTNER,
   });
 
+  const invoicesWhereClause = getWhereClauseForEntity({
+    user,
+    role,
+    isContactAdmin,
+    partnerKey: PartnerKey.PARTNER,
+  });
+
   const isCompleted = type === ORDER.COMPLETED ? true : false;
 
   const result = await findOrders({
@@ -89,8 +96,30 @@ async function Orders({
 
   const {orders, pageInfo} = result;
 
+  const resolvedSelectedId =
+    (selectedId && orders.some((o: any) => String(o.id) === selectedId)
+      ? selectedId
+      : orders[0]?.id && String(orders[0].id)) ?? null;
+
+  const selectedOrder = resolvedSelectedId
+    ? await findOrder({
+        id: resolvedSelectedId,
+        client,
+        params: {where},
+        workspaceURL,
+        isCompleted,
+        invoicesParams: {where: invoicesWhereClause},
+      })
+    : null;
+
   return (
-    <Content orders={clone(orders)} pageInfo={pageInfo} orderType={type} />
+    <Content
+      orders={clone(orders)}
+      pageInfo={pageInfo}
+      orderType={type}
+      selectedOrder={selectedOrder ? clone(selectedOrder) : null}
+      selectedId={resolvedSelectedId}
+    />
   );
 }
 
@@ -101,7 +130,7 @@ export default async function Page(props: {
   const searchParams = await props.searchParams;
   const params = await props.params;
   return (
-    <Suspense fallback={<TableSkeleton />}>
+    <Suspense fallback={<OrdersSplitViewSkeleton />}>
       <Orders params={params} searchParams={searchParams} />
     </Suspense>
   );
