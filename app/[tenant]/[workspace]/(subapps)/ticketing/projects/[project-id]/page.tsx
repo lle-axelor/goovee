@@ -109,35 +109,35 @@ export default async function Page(props0: {
       count: getAllTicketCount({projectId, auth}),
       icon: MdAllInbox,
       href: allTicketsURL,
-      iconClassName: 'bg-palette-pink text-palette-pink-dark',
+      iconClassName: 'bg-[#fce4ec] text-[#c2185b]',
     },
     workspace.config.isShowMyTickets && {
       label: await t(MY_TICKETS_TITLE),
       count: getMyTicketCount({projectId, auth}),
       href: `${ticketsURL}?filter=${encodeFilter<EncodedFilter>({status, myTickets: true})}&title=${encodeURIComponent(MY_TICKETS_TITLE)}`,
       icon: MdAllInbox,
-      iconClassName: 'bg-palette-blue text-palette-blue-dark',
+      iconClassName: 'bg-royal-pale text-royal',
     },
     workspace.config.isShowManagedTicket && {
       label: await t(MANAGED_TICKETS_TITLE),
       count: getManagedTicketCount({projectId, auth}),
       icon: MdListAlt,
       href: `${ticketsURL}?filter=${encodeFilter<EncodedFilter>({status, managedBy: [auth.user.id.toString()]})}&title=${encodeURIComponent(MANAGED_TICKETS_TITLE)}`,
-      iconClassName: 'bg-palette-purple text-palette-purple-dark',
+      iconClassName: 'bg-status-feedback-bg text-status-feedback-fg',
     },
     workspace.config.isShowCreatedTicket && {
       label: await t(CREATED_TICKETS_TITLE),
       count: getCreatedTicketCount({projectId, auth}),
       icon: MdPending,
       href: `${ticketsURL}?filter=${encodeFilter<EncodedFilter>({status, createdBy: [auth.user.id.toString()]})}&title=${encodeURIComponent(CREATED_TICKETS_TITLE)}`,
-      iconClassName: 'bg-palette-yellow text-palette-yellow-dark',
+      iconClassName: 'bg-status-pending-bg text-status-pending-fg',
     },
     workspace.config.isShowResolvedTicket && {
       label: await t(RESOLVED_TICKETS_TITLE),
       count: getResolvedTicketCount({projectId, auth}),
       icon: MdCheckCircleOutline,
       href: `${ticketsURL}?filter=${encodeFilter<EncodedFilter>({status: statusCompleted})}&title=${encodeURIComponent(RESOLVED_TICKETS_TITLE)}`,
-      iconClassName: 'text-success bg-success-light',
+      iconClassName: 'bg-mint-50 text-mint-700',
     },
   ]
     .filter(Boolean)
@@ -151,54 +151,68 @@ export default async function Page(props0: {
     );
 
   return (
-    <div className="container my-6 space-y-6 mx-auto">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink
-              asChild
-              className="text-foreground-muted cursor-pointer truncate text-md">
-              <Link href={`${workspaceURI}/ticketing`}>
-                {await t('Projects')}
-              </Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator>
-            <FaChevronRight className="text-primary" />
-          </BreadcrumbSeparator>
-          <BreadcrumbItem>
-            <BreadcrumbPage className="sm:truncate text-lg  font-semibold">
-              {project.name}
-            </BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-      <Search
-        projectId={projectId}
-        inputClassName="h-[39px] placeholder:!text-sm text-sm"
-      />
-      <Swipe items={items} />
-      <div className="flex items-center justify-between !mt-0">
-        <h2 className="font-semibold text-xl">{await t('Latest tickets')}</h2>
-        <Button variant="success" className="flex items-center" asChild>
-          <Link href={`${ticketsURL}/create`}>
-            <MdAdd className="size-6" />
-            <span>{await t('Create a ticket')}</span>
-          </Link>
-        </Button>
-      </div>
-      <div>
-        <TicketList
-          tickets={tickets}
-          fields={clone(workspace.config.ticketingFieldSet)}
+    <div className="bg-ink-25 min-h-full">
+      <div className="container my-6 space-y-6 mx-auto">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink
+                asChild
+                className="text-ink-500 cursor-pointer truncate text-sm">
+                <Link href={`${workspaceURI}/ticketing`}>
+                  {await t('Projects')}
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator>
+              <FaChevronRight className="text-ink-300" />
+            </BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbPage className="sm:truncate text-sm text-ink-700">
+                {project.name}
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        <header>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-400 mb-1">
+            {await t('Support')}
+          </p>
+          <h1 className="text-3xl font-bold text-ink-900 tracking-[-0.01em]">
+            {project.name}
+          </h1>
+        </header>
+        <Search
+          projectId={projectId}
+          inputClassName="h-11 placeholder:!text-sm text-sm bg-white border-ink-150"
         />
-        <div className="flex justify-end p-4">
-          <Link
-            href={allTicketsURL}
-            className="inline-flex gap-1 items-center text-success text-sm font-medium">
-            {await t('See all tickets')}
-            <MdArrowForward />
-          </Link>
+        <div className="bg-white rounded-xl border border-ink-100 shadow-xs p-2">
+          <Swipe items={items} />
+        </div>
+        <div className="flex items-center justify-between !mt-8">
+          <h2 className="font-bold text-xl text-ink-900">
+            {await t('Latest tickets')}
+          </h2>
+          <Button variant="royal" className="flex items-center gap-1.5" asChild>
+            <Link href={`${ticketsURL}/create`}>
+              <MdAdd className="size-5" />
+              <span>{await t('Create a ticket')}</span>
+            </Link>
+          </Button>
+        </div>
+        <div className="bg-white rounded-xl border border-ink-100 shadow-xs overflow-hidden">
+          <TicketList
+            tickets={tickets}
+            fields={clone(workspace.config.ticketingFieldSet)}
+          />
+          <div className="flex justify-end p-4 border-t border-ink-100">
+            <Link
+              href={allTicketsURL}
+              className="inline-flex gap-1.5 items-center text-royal text-sm font-semibold hover:underline">
+              {await t('See all tickets')}
+              <MdArrowForward />
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -213,22 +227,29 @@ type TicketCardProps = {
   iconClassName: string;
 };
 
-const wrapperClassName = 'flex items-center gap-5 px-4 h-full';
+const wrapperClassName = 'flex items-center gap-4 px-4 py-4 h-full';
 const iconWrapperClassName =
-  'flex items-center justify-center h-10 w-10 rounded-full';
+  'flex items-center justify-center h-11 w-11 rounded-xl shrink-0';
 
 async function TicketCard(props: TicketCardProps) {
   const {label, icon: Icon, count: countPromise, href, iconClassName} = props;
   const count = await countPromise;
 
   return (
-    <Link href={href} className={wrapperClassName}>
+    <Link
+      href={href}
+      className={cn(
+        wrapperClassName,
+        'group hover:bg-ink-50 transition-colors rounded-lg',
+      )}>
       <div className={cn(iconWrapperClassName, iconClassName)}>
-        <Icon className="h-6 w-6" />
+        <Icon className="h-5 w-5" />
       </div>
-      <div className="grow flex flex-col justify-between">
-        <h3 className="text-[28px] font-semibold">{formatNumber(count)}</h3>
-        <p className="text-sm font-semibold">{label}</p>
+      <div className="grow flex flex-col">
+        <h3 className="text-2xl font-bold text-ink-900 tabular-nums leading-none">
+          {formatNumber(count)}
+        </h3>
+        <p className="text-xs font-semibold text-ink-500 mt-1">{label}</p>
       </div>
     </Link>
   );
@@ -240,7 +261,7 @@ function TicketCardSkeleton() {
       <Skeleton className={iconWrapperClassName} />
       <div className="grow flex flex-col gap-2">
         <Skeleton className="w-[3rem] h-[2rem]" />
-        <Skeleton className="w-[7rem] h-[1.5rem]" />
+        <Skeleton className="w-[7rem] h-[1rem]" />
       </div>
     </div>
   );
