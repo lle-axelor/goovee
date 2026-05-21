@@ -113,43 +113,53 @@ function CartItem({item, disabled, handleRemove, displayPrices}: any) {
   const {product, price, errorMessage} = item.computedProduct;
 
   return (
-    <div
+    <article
       key={item.id}
-      className="flex-col md:flex-row flex items-start gap-6 bg-card text-card-foreground p-4 rounded-lg">
-      <BackgroundImage
-        className="rounded-lg h-[12.5rem] md:w-[12.5rem] w-full min-w-[12.5rem]"
-        style={{backgroundSize: 'cover'}}
-        src={getProductImageURL(
-          product?.thumbnailImage?.id || product?.images?.[0],
-          tenant,
-        )}
-      />
+      className="flex-col md:flex-row flex items-start gap-5 bg-white border border-ink-100 shadow-xs p-4 rounded-xl">
+      <Link
+        href={`${workspaceURI}/shop/product/${encodeURIComponent(product.slug)}`}
+        className="shrink-0">
+        <BackgroundImage
+          className="rounded-lg h-32 md:w-32 w-full min-w-32 bg-ink-50"
+          style={{backgroundSize: 'cover'}}
+          src={getProductImageURL(
+            product?.thumbnailImage?.id || product?.images?.[0],
+            tenant,
+          )}
+        />
+      </Link>
       <div className="flex-col md:flex-row flex gap-4 items-start justify-between w-full h-full">
-        <div className="flex flex-col items-start justify-between py-2 w-full h-full flex-1">
+        <div className="flex flex-col items-start gap-3 w-full h-full flex-1">
           <Link
             className="no-underline text-inherit"
             href={`${workspaceURI}/shop/product/${encodeURIComponent(
               product.slug,
             )}`}>
-            <h6 className="font-medium mb-2">{i18n.tattr(product.name)}</h6>
+            <h3 className="font-semibold text-base text-ink-900 leading-snug">
+              {i18n.tattr(product.name)}
+            </h3>
           </Link>
           {errorMessage && (
-            <p className="text-sm font-medium mb-2 text-destructive">
+            <p className="text-xs font-semibold text-status-overdue-fg">
               {i18n.t('Price may be incorrect')}
             </p>
           )}
           {product.allowCustomNote && (
-            <div className="w-full flex flex-col gap-2 my-4">
-              <Label>{i18n.t('Note')}</Label>
+            <div className="w-full flex flex-col gap-1.5">
+              <Label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-400">
+                {i18n.t('Note')}
+              </Label>
               <Textarea
-                className="border rounded-lg"
+                className="border border-ink-150 rounded-lg text-sm"
                 value={note}
                 onChange={handleChangeNote}
               />
             </div>
           )}
-          <div className="flex flex-col mt-auto">
-            <p className="mb-2 font-semibold">{i18n.t('Quantity')}</p>
+          <div className="flex items-center gap-3 mt-auto">
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-400">
+              {i18n.t('Quantity')}
+            </span>
             <Quantity
               value={quantity}
               disabled={updating}
@@ -159,22 +169,30 @@ function CartItem({item, disabled, handleRemove, displayPrices}: any) {
             />
           </div>
         </div>
-        <div className="flex flex-col items-end ml-auto py-2 h-full">
-          <p className="text-xl font-semibold mb-1">
-            {displayPrices && price.displayPrimary}
-          </p>
-          <p className="text-sm font-medium mb-1">
-            {displayPrices && price.displaySecondary}
-          </p>
-          <Button
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          {displayPrices && (
+            <>
+              <p className="text-lg font-bold text-ink-900 tabular-nums">
+                {price.displayPrimary}
+              </p>
+              {price.displaySecondary && (
+                <p className="text-xs text-ink-500 tabular-nums">
+                  {price.displaySecondary}
+                </p>
+              )}
+            </>
+          )}
+          <button
+            type="button"
             disabled={disabled || updating}
             onClick={handleRemove(product)}
-            className="w-6 bg-transparent hover:bg-transparent text-destructive p-0 ml-auto mt-auto border-none">
-            <MdDeleteOutline className="text-2xl" />
-          </Button>
+            aria-label={i18n.t('Remove')}
+            className="mt-auto w-8 h-8 grid place-items-center rounded-md text-status-overdue-fg hover:bg-status-overdue-bg transition-colors disabled:opacity-40">
+            <MdDeleteOutline className="text-xl" />
+          </button>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -231,69 +249,79 @@ function CartSummary({
   const authenticated = session?.user?.id;
 
   return (
-    <div className="col-span-12 xl:col-span-3 p-4 bg-card text-card-foreground rounded-lg">
-      {workspace?.config?.displayPrices && (
-        <>
-          <p className="text-xl font-semibold mb-6">{i18n.t('Total')}</p>
-          <Separator className="mb-2" />
-          <div className="flex justify-between">
-            <p className="mb-4">{i18n.t('Products')}</p>
-            <p className="font-semibold mb-4">{displayTotal}</p>
+    <aside className="col-span-12 xl:col-span-3 xl:sticky xl:top-6 h-fit">
+      <div className="p-6 bg-white rounded-xl border border-ink-100 shadow-xs flex flex-col gap-4">
+        {workspace?.config?.displayPrices && (
+          <>
+            <h3 className="text-lg font-bold text-ink-900">
+              {i18n.t('Total')}
+            </h3>
+            <dl className="flex flex-col gap-2 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-ink-500">{i18n.t('Products')}</dt>
+                <dd className="font-semibold text-ink-900 tabular-nums">
+                  {displayTotal}
+                </dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-ink-500">{i18n.t('Shipping')}</dt>
+                <dd className="text-xs text-ink-400">
+                  {i18n.t('To be determined')}
+                </dd>
+              </div>
+            </dl>
+            <Separator className="bg-ink-100" />
+            <div className="flex justify-between items-baseline">
+              <span className="font-semibold text-ink-700">
+                {i18n.t('Total Price')}
+              </span>
+              <span className="text-2xl font-bold text-ink-900 tabular-nums">
+                {displayTotal}
+              </span>
+            </div>
+          </>
+        )}
+        {authenticated ? (
+          <div className="flex flex-col gap-2">
+            {!hideCheckout && (
+              <Button
+                variant="dark"
+                className="w-full"
+                disabled={noitem}
+                onClick={() =>
+                  router.push(`${workspaceURI}/shop/cart/checkout`)
+                }>
+                {i18n.t('Checkout')}
+              </Button>
+            )}
+            {!hideRequestQuotation && (
+              <Button
+                variant="ink-outline"
+                className="w-full"
+                disabled={noitem}
+                onClick={onRequestQuotation}>
+                {i18n.t('Request Quotation')}
+              </Button>
+            )}
           </div>
-          <div className="flex justify-between">
-            <p className="mb-4">{i18n.t('Shipping')}</p>
-            <p className="text-xs mb-4">{i18n.t('To be determined')}</p>
-          </div>
-          <Separator className="my-2" />
-          <div className="flex justify-between my-4">
-            <p className="font-medium">{i18n.t('Total Price')}</p>
-            <p className="text-xl font-semibold mb-0">{displayTotal}</p>
-          </div>
-        </>
-      )}
-      {authenticated ? (
-        <>
-          {!hideCheckout && (
-            <Button
-              className="w-full rounded-full mb-4"
-              disabled={noitem}
-              onClick={() => router.push(`${workspaceURI}/shop/cart/checkout`)}>
-              {i18n.t('Checkout')}
-            </Button>
-          )}
-          {!hideRequestQuotation && (
-            <Button
-              variant="outline"
-              className="w-full rounded-full mb-4"
-              disabled={noitem}
-              onClick={onRequestQuotation}>
-              {i18n.t('Request Quotation')}
-            </Button>
-          )}
-        </>
-      ) : (
-        <Link
-          className="no-underline text-inherit"
-          href={`/auth/login?callbackurl=${encodeURIComponent(
-            pathname,
-          )}&workspaceURI=${encodeURIComponent(workspaceURI)}&${SEARCH_PARAMS.TENANT_ID}=${encodeURIComponent(tenant)}`}>
-          <Button className="mb-4 w-full rounded-full">
-            {i18n.t('Login for checkout')}
+        ) : (
+          <Button asChild variant="royal" className="w-full">
+            <Link
+              href={`/auth/login?callbackurl=${encodeURIComponent(
+                pathname,
+              )}&workspaceURI=${encodeURIComponent(workspaceURI)}&${SEARCH_PARAMS.TENANT_ID}=${encodeURIComponent(tenant)}`}>
+              {i18n.t('Login for checkout')}
+            </Link>
           </Button>
-        </Link>
-      )}
-      <Separator className="mb-4" />
-      <div className="flex items-center">
-        <LuChevronLeft className="text-2xl" />
-        <Button className="w-full rounded-full">
-          <Link
-            href={`${workspaceURI}/shop`}
-            className="no-underline text-inherit">
+        )}
+        <Button asChild variant="royal-ghost" className="w-full gap-1.5">
+          <Link href={`${workspaceURI}/shop`}>
+            <LuChevronLeft className="text-base" />
             {i18n.t('Continue Shopping')}
           </Link>
         </Button>
       </div>
-    </div>
+    </aside>
   );
 }
 
@@ -419,47 +447,72 @@ export default function Content({
   }
 
   return (
-    <div className="container flex flex-col gap-6 mx-auto">
-      <h4 className="mb-6 text-xl font-medium">{i18n.t('Cart')}</h4>
-      <div className="grid mb-[5rem] lg:mb-0 grid-cols-1 xl:grid-cols-12 gap-4">
-        <div className="col-span-12 xl:col-span-9">
+    <div className="bg-ink-25 min-h-full">
+      <div className="container flex flex-col gap-6 mx-auto py-8">
+        <header>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-400 mb-1">
+            {i18n.t('Shop')}
+          </p>
+          <h1 className="text-3xl font-bold text-ink-900 tracking-[-0.01em]">
+            {i18n.t('Cart')}
+          </h1>
           {cart?.items?.length ? (
-            <CartItems
-              cart={$cart}
-              onRemove={openProductConfirmation}
-              disabled={updating}
-              workspace={workspace}
-            />
-          ) : (
-            <p className="text-xl font-bold">{i18n.t('Your cart is empty.')}</p>
-          )}
+            <p className="text-sm text-ink-500 mt-1 tabular-nums">
+              {cart.items.length}{' '}
+              {i18n.t(cart.items.length > 1 ? 'items' : 'item')}
+            </p>
+          ) : null}
+        </header>
+        <div className="grid mb-[5rem] lg:mb-0 grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+          <div className="col-span-12 xl:col-span-9">
+            {cart?.items?.length ? (
+              <CartItems
+                cart={$cart}
+                onRemove={openProductConfirmation}
+                disabled={updating}
+                workspace={workspace}
+              />
+            ) : (
+              <div className="bg-white rounded-xl border border-ink-100 shadow-xs p-12 text-center">
+                <p className="text-base font-semibold text-ink-700">
+                  {i18n.t('Your cart is empty.')}
+                </p>
+                <Link
+                  href={`${workspaceURI}/shop`}
+                  className="inline-flex items-center gap-1.5 mt-3 text-sm text-royal font-semibold hover:underline">
+                  <LuChevronLeft className="text-base" />
+                  {i18n.t('Continue Shopping')}
+                </Link>
+              </div>
+            )}
+          </div>
+          <CartSummary
+            cart={$cart}
+            onRequestQuotation={openQuotationConfirmation}
+            workspace={workspace}
+            hideRequestQuotation={!workspace?.config?.requestQuotation}
+            hideCheckout={!workspace?.config?.confirmOrder}
+          />
+          <AlertDialog open={Boolean(confirmationDialog)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{confirmationDialog?.title}</AlertDialogTitle>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={closeConfirmation}>
+                  {i18n.t('Cancel')}
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    confirmationDialog?.onContinue();
+                    closeConfirmation();
+                  }}>
+                  {i18n.t('Continue')}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
-        <CartSummary
-          cart={$cart}
-          onRequestQuotation={openQuotationConfirmation}
-          workspace={workspace}
-          hideRequestQuotation={!workspace?.config?.requestQuotation}
-          hideCheckout={!workspace?.config?.confirmOrder}
-        />
-        <AlertDialog open={Boolean(confirmationDialog)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{confirmationDialog?.title}</AlertDialogTitle>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={closeConfirmation}>
-                {i18n.t('Cancel')}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  confirmationDialog?.onContinue();
-                  closeConfirmation();
-                }}>
-                {i18n.t('Continue')}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
     </div>
   );
