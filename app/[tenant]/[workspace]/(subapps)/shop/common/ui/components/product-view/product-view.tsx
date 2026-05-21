@@ -107,23 +107,26 @@ export function ProductView({
     })();
   }, [getProductNote, getProductQuantity, product, setQuantity]);
 
+  const showPrices = workspace?.config?.displayPrices && !hidePriceAndPurchase;
+
   return (
-    <div>
+    <div className="bg-ink-25 min-h-full">
       <div className="relative">
         <NavbarCategoryMenu
           categories={categories}
           onClick={handleCategoryClick}
         />
       </div>
-      <div className="container py-2">
-        <div className="my-10">
+      <div className="container py-8">
+        <div className="mb-6">
           <Breadcrumbs
             breadcrumbs={breadcrumbs}
             onClick={handleBreadCrumbClick}
           />
         </div>
-        <div className="grid md:grid-cols-[36%_1fr] grid-cols-1 gap-5">
-          <div className="overflow-hidden rounded-lg">
+        <div className="grid md:grid-cols-[minmax(0,40%)_1fr] grid-cols-1 gap-8">
+          {/* Gallery */}
+          <div className="bg-white rounded-xl border border-ink-100 shadow-xs p-3 overflow-hidden">
             <ThumbsCarousel
               images={
                 product.images?.length
@@ -140,71 +143,104 @@ export function ProductView({
               }
             />
           </div>
-          <div className="rounded-lg border bg-card text-card-foreground p-4">
-            <div className="flex flex-col gap-2 mb-6">
-              <p className="text-xl font-semibold">
-                {i18n.tattr(product.name)}
-              </p>
-              {showMessage && isOutOfStock && (
-                <p className="text-base font-semibold mt-0 mb-0 text-destructive">
-                  {i18n.t('Out of stock')}
-                </p>
-              )}
-              {errorMessage &&
-                workspace?.config?.displayPrices &&
-                !hidePriceAndPurchase && (
-                  <p className="text-base font-semibold mt-0 mb-0 text-destructive">
-                    {i18n.t('Price may be incorrect')}
-                  </p>
+
+          {/* Info card */}
+          <div className="bg-white rounded-xl border border-ink-100 shadow-xs p-6 flex flex-col gap-6">
+            <header>
+              <div className="flex items-center gap-2 mb-2">
+                {showMessage && isOutOfStock ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-status-overdue-bg text-status-overdue-fg text-[11px] font-semibold">
+                    {i18n.t('Out of stock')}
+                  </span>
+                ) : (
+                  showPrices && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-mint-50 text-mint-700 text-[11px] font-semibold">
+                      {i18n.t('In stock')}
+                    </span>
+                  )
                 )}
-            </div>
-            {workspace?.config?.displayPrices && !hidePriceAndPurchase && (
-              <>
-                <p className="text-xl font-semibold mb-2">
+              </div>
+              <h1 className="text-2xl font-bold text-ink-900 leading-tight">
+                {i18n.tattr(product.name)}
+              </h1>
+            </header>
+
+            {showPrices && (
+              <div>
+                <p className="text-[32px] font-bold leading-none text-ink-900 tabular-nums">
                   {price.displayPrimary}
                 </p>
                 {price.displayTwoPrices && (
-                  <p className="text-sm">{price.displaySecondary}</p>
+                  <p className="text-sm text-ink-500 tabular-nums mt-1">
+                    {price.displaySecondary}
+                  </p>
                 )}
-              </>
+                {errorMessage && (
+                  <p className="mt-2 text-xs font-semibold text-status-overdue-fg">
+                    {i18n.t('Price may be incorrect')}
+                  </p>
+                )}
+              </div>
             )}
-            <ProductMetaFieldView productId={product.id} fields={metaFields} />
-            <span className="font-medium">{i18n.t('Product description')}</span>
-            <InnerHTML
-              as="p"
-              className="text-sm mb-0"
-              content={product.description}
-            />
+
+            <div>
+              <ProductMetaFieldView
+                productId={product.id}
+                fields={metaFields}
+              />
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-400 mb-2">
+                {i18n.t('Product description')}
+              </p>
+              <InnerHTML
+                as="div"
+                className="text-sm text-ink-700 leading-relaxed [&_p]:mb-2"
+                content={product.description}
+              />
+            </div>
+
             {Boolean(cartQuantity) && product.allowCustomNote && (
-              <div className="flex flex-col gap-2 mt-4">
-                <Label>{i18n.t('Note')}</Label>
+              <div className="flex flex-col gap-2">
+                <Label className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-400">
+                  {i18n.t('Note')}
+                </Label>
                 <Textarea
-                  className="border rounded-lg"
+                  className="border-ink-150 rounded-lg"
                   value={note}
                   onChange={handleChangeNote}
                 />
               </div>
             )}
-            <div className="flex flex-col mt-4">
-              <p className="mb-2 font-semibold">{i18n.t('Quantity')}</p>
-              <Quantity
-                value={quantity}
-                onIncrement={increment}
-                onDecrement={decrement}
-                onChange={newValue => setQuantity(Number(newValue))}
-                disabled={updating}
-              />
-            </div>
+
             {canBuy && (
-              <Button
-                onClick={handleAddToCart}
-                className="w-full rounded-full mt-4">
-                <div className="flex items-center justify-center gap-2">
-                  <MdOutlineShoppingBasket className="text-2xl" />
-                  <span className="text-sm font-medium mb-0">
-                    {i18n.t('Add to cart')}
+              <div className="flex flex-col gap-3 mt-auto pt-2">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-400">
+                    {i18n.t('Quantity')}
                   </span>
+                  <Quantity
+                    value={quantity}
+                    onIncrement={increment}
+                    onDecrement={decrement}
+                    onChange={newValue => setQuantity(Number(newValue))}
+                    disabled={updating}
+                  />
                 </div>
+                <Button
+                  onClick={handleAddToCart}
+                  variant="dark"
+                  className="w-full gap-2">
+                  <MdOutlineShoppingBasket className="text-lg" />
+                  {i18n.t('Add to cart')}
+                </Button>
+              </div>
+            )}
+
+            {!canBuy && isOutOfStock && (
+              <Button variant="royal" className="w-full mt-auto">
+                {i18n.t('Notify me')}
               </Button>
             )}
           </div>
