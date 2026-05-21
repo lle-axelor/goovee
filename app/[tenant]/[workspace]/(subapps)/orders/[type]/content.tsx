@@ -64,8 +64,8 @@ const Content = ({orders, pageInfo, orderType}: ContentProps) => {
   };
 
   return (
-    <div className="bg-ink-25 min-h-full">
-      <div className="border-b border-ink-100 bg-white">
+    <div className="bg-ink-25 flex-1 min-h-0 flex flex-col">
+      <div className="border-b border-ink-100 bg-white shrink-0">
         <nav className="max-w-[1280px] mx-auto px-8 flex gap-8">
           {ORDER_TAB_ITEMS.map(tab => {
             const isActive = tab.href === orderType;
@@ -86,10 +86,10 @@ const Content = ({orders, pageInfo, orderType}: ContentProps) => {
         </nav>
       </div>
 
-      <div className="max-w-[1280px] mx-auto px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
+      <div className="w-full max-w-[1280px] mx-auto px-8 py-6 flex-1 min-h-0 flex flex-col">
+        <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6 flex-1 min-h-0">
           {/* Left — list */}
-          <aside className="bg-white rounded-xl border border-ink-100 shadow-xs flex flex-col overflow-hidden h-[calc(100vh-200px)] min-h-[480px]">
+          <aside className="bg-white rounded-xl border border-ink-100 shadow-xs flex flex-col overflow-hidden min-h-[480px] lg:min-h-0 lg:h-full">
             <header className="px-5 pt-5 pb-3">
               <div className="flex items-baseline justify-between mb-3">
                 <h2 className="text-lg font-bold text-ink-900">
