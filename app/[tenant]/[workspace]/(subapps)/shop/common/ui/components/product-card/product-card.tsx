@@ -1,16 +1,15 @@
 'use client';
 
 import React from 'react';
-import {MdAddShoppingCart} from 'react-icons/md';
+import {MdAdd} from 'react-icons/md';
 
 // ---- CORE IMPORTS ---- //
 import {BackgroundImage, Button} from '@/ui/components';
 import {getProductImageURL} from '@/utils/files';
 import {i18n} from '@/locale';
 import {cn} from '@/utils/css';
-import {useToast} from '@/ui/hooks';
 import {useWorkspace} from '@/app/[tenant]/[workspace]/workspace-context';
-import type {Category, ComputedProduct, ID, Product} from '@/types';
+import type {Category, ComputedProduct, ID} from '@/types';
 
 // ---- LOCAL IMPORTS ---- //
 import {Link} from '@/subapps/shop/common/ui/components';
@@ -41,70 +40,92 @@ export function ProductCard({
   const showMessage = outOfStockConfig?.showMessage;
   const canBuy = outOfStockConfig?.canBuy && !hidePriceAndPurchase;
 
-  const handleAdd = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleAdd = () => {
     onAdd(computedProduct);
   };
 
   return (
-    <div
+    <article
       className={cn(
-        'flex flex-col justify-start cursor-pointer rounded-2xl bg-card text-card-foreground',
-        {
-          'min-h-[25.625rem]': displayPrices && !hidePriceAndPurchase,
-        },
+        'group relative flex flex-col bg-white rounded-xl border border-ink-100 shadow-xs',
+        'transition-shadow hover:shadow-soft-md',
+        'overflow-hidden',
       )}>
       <Link
-        href={`${workspaceURI}/shop/category/${category.slug}/product/${product.slug}`}>
+        href={`${workspaceURI}/shop/category/${category.slug}/product/${product.slug}`}
+        className="block">
         <BackgroundImage
-          className="rounded-t-lg bg-cover relative h-[14.5rem]"
+          className="bg-cover relative aspect-[4/3] bg-ink-50"
           src={getProductImageURL(
             product.thumbnailImage?.id || (product.images?.[0] as ID),
             tenant,
           )}>
-          {Boolean(quantity) ? (
-            <div className="border shadow-lg absolute bg-card p-4 rounded-full flex items-center justify-center w-[3.75rem] h-[3.75rem] bottom-4 right-4">
-              <p className="mb-0 text-xl font-bold">{quantity}</p>
-            </div>
-          ) : (
-            ''
+          {Boolean(quantity) && (
+            <span
+              className={cn(
+                'absolute top-3 right-3',
+                'min-w-7 h-7 px-2 rounded-full',
+                'bg-mint-500 text-white text-xs font-bold tabular-nums',
+                'inline-flex items-center justify-center shadow-soft-sm',
+              )}>
+              {quantity}
+            </span>
+          )}
+          {showMessage && isOutOfStock && (
+            <span
+              className={cn(
+                'absolute top-3 left-3',
+                'px-2 py-0.5 rounded-full',
+                'bg-white/95 text-status-overdue-fg text-[11px] font-semibold',
+                'shadow-xs',
+              )}>
+              {i18n.t('Out of stock')}
+            </span>
           )}
         </BackgroundImage>
-        <div className="py-4 px-6">
-          <h5 className="font-medium line-clamp-1">
-            {i18n.tattr(product.name)}
-          </h5>
-          {displayPrices && !hidePriceAndPurchase && (
-            <>
-              <h5 className="font-semibold mt-2">{displayPrimary}</h5>
-              {displayTwoPrices && (
-                <span className="text-xs font-medium">{displaySecondary}</span>
-              )}
-            </>
-          )}
-        </div>
       </Link>
-      <div className="flex items-start justify-between p-6 pt-0">
-        <div>
-          {showMessage && isOutOfStock && (
-            <p className="text-xs font-bold mt-0 mb-0 text-destructive">
-              {i18n.t('Out of stock')}
+
+      <div className="flex flex-col gap-2 p-4 flex-1">
+        <Link
+          href={`${workspaceURI}/shop/category/${category.slug}/product/${product.slug}`}>
+          <h3 className="font-semibold text-sm text-ink-900 line-clamp-2 leading-snug min-h-[2.5rem]">
+            {i18n.tattr(product.name)}
+          </h3>
+        </Link>
+
+        {displayPrices && !hidePriceAndPurchase ? (
+          <div className="mt-auto">
+            <p className="text-lg font-bold text-ink-900 tabular-nums">
+              {displayPrimary}
             </p>
-          )}
-          {errorMessage && displayPrices && !hidePriceAndPurchase && (
-            <p className="text-xs font-bold mt-0 mb-0 text-destructive">
-              {i18n.t('Price may be incorrect')}
-            </p>
-          )}
-        </div>
-        {canBuy && (
-          <Button
-            onClick={handleAdd}
-            className="rounded-full h-12 w-12 p-2 ml-auto">
-            <MdAddShoppingCart className="text-2xl" />
-          </Button>
-        )}
+            {displayTwoPrices && (
+              <p className="text-xs text-ink-500 tabular-nums">
+                {displaySecondary}
+              </p>
+            )}
+            {errorMessage && (
+              <p className="mt-1 text-[11px] font-semibold text-status-overdue-fg">
+                {i18n.t('Price may be incorrect')}
+              </p>
+            )}
+          </div>
+        ) : null}
       </div>
-    </div>
+
+      {canBuy && (
+        <div className="px-4 pb-4 -mt-2">
+          <Button
+            type="button"
+            onClick={handleAdd}
+            variant="dark"
+            className="w-full gap-2"
+            aria-label={i18n.t('Add to cart')}>
+            <MdAdd className="text-base" />
+            {i18n.t('Add to cart')}
+          </Button>
+        </div>
+      )}
+    </article>
   );
 }
 export default ProductCard;
