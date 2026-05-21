@@ -20,6 +20,7 @@ import {useCart} from '@/app/[tenant]/[workspace]/cart-context';
 import {useWorkspace} from '@/app/[tenant]/[workspace]/workspace-context';
 import {i18n} from '@/locale';
 import {useToast} from '@/ui/hooks';
+import {cn} from '@/utils/css';
 import type {ComputedProduct, Product, Category} from '@/types';
 import type {PortalWorkspace} from '@/orm/workspace';
 
@@ -156,15 +157,15 @@ export function ProductList({
   const isListView = view === VIEW.LIST;
 
   return (
-    <div>
-      <div className="flex items-center justify-between bg-white relative">
+    <div className="bg-ink-25 min-h-full">
+      <div className="flex items-center justify-between bg-white relative border-b border-ink-100">
         <div className="w-0 md:w-[80%] overflow-hidden">
           <NavbarCategoryMenu
             categories={categories}
             onClick={handleCategoryClick}
           />
         </div>
-        <div className="w-full sm:!w-[18.75rem] px-4 py-2">
+        <div className="w-full sm:!w-[18.75rem] px-4 py-3">
           <form
             onSubmit={handleChangeSearch}
             className={`${styles.wrapper} w-full`}>
@@ -173,43 +174,70 @@ export function ProductList({
               placeholder={i18n.t('Search here')}
               value={searching}
               onChange={e => setSearching(e.target.value)}
-              className="pl-12 rounded-full mb-0"
+              className="pl-12 rounded-full mb-0 bg-ink-25 border-ink-150"
             />
-            <div className={`${styles.icons} top-[0.625rem] !pt-0`}>
-              <BiSearch className="text-2xl" />
+            <div className={`${styles.icons} top-[0.625rem] !pt-0 text-royal`}>
+              <BiSearch className="text-xl" />
             </div>
           </form>
         </div>
       </div>
-      <div className={'container portal-container'}>
-        <div className="my-10 text-foreground">
+      <div className="container portal-container py-6">
+        <div className="mb-5 text-ink-600">
           <Breadcrumbs
             breadcrumbs={breadcrumbs}
             onClick={handleBreadCrumbClick}
           />
         </div>
-        <div className="flex items-center gap-4 mb-4">
-          <h4 className="text-xl font-medium grow">
-            {category && category?.name}
-          </h4>
-          <SortBy
-            workspace={workspace}
-            onChange={handleChangeSortBy}
-            value={sort || defaultSort}
-            className="flex-grow-0! basis-[25%]"
-          />
-          <MdGridView
-            color={isGridView ? 'primary' : 'secondary'}
-            className="cursor-pointer text-2xl"
-            onClick={() => handleChangeView(VIEW.GRID)}
-          />
-          <MdOutlineList
-            color={isListView ? 'primary' : 'secondary'}
-            className="cursor-pointer text-2xl"
-            onClick={() => handleChangeView(VIEW.LIST)}
-          />
+        <div className="flex items-end justify-between gap-4 mb-6 flex-wrap">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-400 mb-1">
+              {i18n.t('Category')}
+            </p>
+            <h1 className="text-2xl md:text-3xl font-bold text-ink-900 leading-tight">
+              {category && category?.name}
+            </h1>
+            <p className="text-sm text-ink-500 mt-1 tabular-nums">
+              {products.length}{' '}
+              {i18n.t(products.length > 1 ? 'products' : 'product')}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <SortBy
+              workspace={workspace}
+              onChange={handleChangeSortBy}
+              value={sort || defaultSort}
+              className="flex-grow-0! basis-auto min-w-[180px]"
+            />
+            <div className="hidden md:flex items-center bg-white border border-ink-150 rounded-lg p-0.5">
+              <button
+                type="button"
+                onClick={() => handleChangeView(VIEW.GRID)}
+                className={cn(
+                  'w-8 h-8 grid place-items-center rounded-md transition-colors',
+                  isGridView
+                    ? 'bg-royal text-white'
+                    : 'text-ink-500 hover:bg-ink-50',
+                )}
+                aria-label={i18n.t('Grid view')}>
+                <MdGridView className="text-base" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleChangeView(VIEW.LIST)}
+                className={cn(
+                  'w-8 h-8 grid place-items-center rounded-md transition-colors',
+                  isListView
+                    ? 'bg-royal text-white'
+                    : 'text-ink-500 hover:bg-ink-50',
+                )}
+                aria-label={i18n.t('List view')}>
+                <MdOutlineList className="text-base" />
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="bg-card text-card-foreground shadow mb-4 grid md:hidden grid-cols-2 gap-2 p-2">
+        <div className="bg-white rounded-xl border border-ink-100 shadow-xs mb-4 grid md:hidden grid-cols-2 gap-2 p-2">
           <MobileSortBy
             active={sort || defaultSort}
             workspace={workspace}
@@ -224,7 +252,12 @@ export function ProductList({
             {/* <ProductListBrandFilter /> */}
           </div>
           <div
-            className={`${isListView ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3'} grid gap-5 `}>
+            className={cn(
+              'grid gap-5',
+              isListView
+                ? 'grid-cols-1'
+                : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+            )}>
             {products?.length ? (
               products.map(computedProduct => {
                 const quantity = cart?.items?.find(
@@ -246,11 +279,13 @@ export function ProductList({
                 );
               })
             ) : (
-              <div>{i18n.t('No product available.')}</div>
+              <div className="col-span-full py-12 text-center text-sm text-ink-400">
+                {i18n.t('No product available.')}
+              </div>
             )}
           </div>
         </div>
-        <div className="mt-6 mb-4 flex items-center justify-center">
+        <div className="mt-8 mb-4 flex items-center justify-center">
           {products.length ? (
             <Pagination
               page={page}
