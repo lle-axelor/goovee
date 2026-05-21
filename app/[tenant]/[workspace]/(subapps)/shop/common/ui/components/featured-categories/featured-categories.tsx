@@ -42,13 +42,20 @@ export function FeaturedCategories({
   return categories?.map((category: any) =>
     category?.products?.length ? (
       <Fragment key={category.id}>
-        <div className="flex justify-between items-center">
-          <h3 className="text-xl leading-7 font-medium">{category.name}</h3>
+        <div className="flex justify-between items-end mt-4">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-400 mb-1">
+              {i18n.t('Category')}
+            </p>
+            <h3 className="text-2xl font-bold text-ink-900 leading-tight">
+              {category.name}
+            </h3>
+          </div>
           <Link href={`${workspaceURI}/shop/category/${category.slug}`}>
-            <div className="flex gap-2 px-3 py-4 cursor-pointer">
-              <span className="leading-6 text-sm">{i18n.t('See All')}</span>
-              <MdEast className="w-6 h-6" />
-            </div>
+            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold text-royal hover:bg-royal-pale transition-colors">
+              {i18n.t('See All')}
+              <MdEast className="w-4 h-4" />
+            </span>
           </Link>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">

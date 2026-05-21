@@ -12,45 +12,52 @@ export function HomeCarousel({images}: any) {
   const {workspaceURI} = useWorkspace();
 
   return images?.length ? (
-    <Swiper
-      modules={[Pagination]}
-      pagination={{
-        type: 'bullets',
-        clickable: true,
-        bulletActiveClass: '[&>div]:bg-black',
-        horizontalClass: '!bottom-[4.375rem]',
-        renderBullet: (index, className) =>
-          `<div class="${className} h-3 w-3 rounded-full bg-transparent border border-black inline-flex items-center justify-center">
-            <div class="h-2 w-2 rounded-full"></div>
-          </div>`,
-      }}>
-      {images.map((item: any, i: number) => {
-        return (
-          <SwiperSlide key={i} className="max-w-full">
-            <div
-              className="flex items-center relative bg-center bg-no-repeat bg-cover h-[750px] p-4 md:p-20"
-              style={{
-                backgroundImage: `url("${workspaceURI}/${SUBAPP_CODES.shop}/api/carousel/${item.id}/image")`,
-              }}>
-              <div className="absolute top-0 left-0 w-full h-full bg-black/[.15]" />
-              <div className="space-y-10 md:w-1/2 z-20">
-                <h2 className="font-medium text-4xl">{item.title}</h2>
-                <p className="text-xl">{item.subTitle}</p>
-                <Button className="relative z-10" asChild>
-                  <a
-                    href={item.href || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer">
-                    {i18n.t(item?.buttonLabel || 'Shop products')}
-                  </a>
-                </Button>
+    <div className="container mx-auto px-4 my-6">
+      <div className="overflow-hidden rounded-2xl border border-ink-100 shadow-soft-md bg-white">
+        <Swiper
+          modules={[Pagination]}
+          pagination={{
+            type: 'bullets',
+            clickable: true,
+            bulletActiveClass: '[&>div]:bg-royal [&>div]:scale-100',
+            horizontalClass: '!bottom-6',
+            renderBullet: (_index, className) =>
+              `<div class="${className} !mx-1 h-2 w-2 rounded-full inline-flex items-center justify-center">
+                <div class="h-2 w-2 rounded-full bg-ink-300 scale-75 transition-all"></div>
+              </div>`,
+          }}>
+          {images.map((item: any, i: number) => (
+            <SwiperSlide key={i} className="max-w-full">
+              <div
+                className="flex items-center relative bg-center bg-no-repeat bg-cover h-[460px] md:h-[560px] p-6 md:p-16"
+                style={{
+                  backgroundImage: `url("${workspaceURI}/${SUBAPP_CODES.shop}/api/carousel/${item.id}/image")`,
+                }}>
+                <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/75 to-transparent" />
+                <div className="relative z-10 max-w-md flex flex-col gap-5">
+                  <h2 className="font-bold text-3xl md:text-4xl text-ink-900 leading-tight tracking-[-0.01em]">
+                    {item.title}
+                  </h2>
+                  {item.subTitle && (
+                    <p className="text-base md:text-lg text-ink-600 leading-relaxed">
+                      {item.subTitle}
+                    </p>
+                  )}
+                  <Button asChild variant="dark" className="self-start gap-2">
+                    <a
+                      href={item.href || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer">
+                      {i18n.t(item?.buttonLabel || 'Shop products')}
+                    </a>
+                  </Button>
+                </div>
               </div>
-              <div className="absolute left-0 top-0 right-0 bottom-0 z-10 bg-[linear-gradient(90deg,_#FFF_14.57%,_rgba(255,255,255,0.00)_98.91%)]"></div>
-            </div>
-          </SwiperSlide>
-        );
-      })}
-    </Swiper>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      </div>
+    </div>
   ) : null;
 }
 
