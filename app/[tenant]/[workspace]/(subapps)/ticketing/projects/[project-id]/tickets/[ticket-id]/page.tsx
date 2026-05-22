@@ -47,8 +47,12 @@ import type {
   ContactPartner,
   Priority,
 } from '../../../../common/types';
-import {TicketDetails} from '../../../../common/ui/components/ticket-details';
+import {
+  TicketCompactHeader,
+  TicketSidebar,
+} from '../../../../common/ui/components/ticket-details';
 import {TicketDetailsProvider} from '../../../../common/ui/components/ticket-details/ticket-details-provider';
+import {RichTextViewer} from '@/ui/components/rich-text-editor/rich-text-viewer';
 import {
   ChildTicketList,
   ParentTicketList,
@@ -153,92 +157,114 @@ export default async function Page(props: {
           </BreadcrumbList>
         </Breadcrumb>
         <TicketDetailsProvider ticket={ticket}>
-          <>
-            <div className="bg-white rounded-xl border border-ink-100 shadow-xs p-6">
-              <TicketDetails
+          <TicketCompactHeader
+            backHref={allTicketsURL}
+            showCancel={workspace.config.isDisplayCancelBtn}
+            showClose={workspace.config.isDisplayCloseBtn}
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5 items-start">
+            {/* Left — conversation */}
+            <div className="flex flex-col gap-5 min-w-0">
+              {ticket.description && (
+                <section className="bg-white rounded-xl border border-ink-100 shadow-xs p-6">
+                  <h2 className="text-sm font-bold uppercase tracking-[0.06em] text-ink-400 mb-3">
+                    {await t('Request')}
+                  </h2>
+                  <RichTextViewer content={ticket.description} />
+                </section>
+              )}
+              {isCommentEnabled({
+                subapp: SUBAPP_CODES.ticketing,
+                workspace,
+              }) && (
+                <section className="rounded-xl border border-ink-100 bg-white shadow-xs p-6">
+                  <h2 className="text-lg font-bold text-ink-900 mb-4">
+                    {await t('Conversation')}
+                  </h2>
+                  <Comments
+                    key={Math.random()}
+                    recordId={ticket.id}
+                    subapp={SUBAPP_CODES.ticketing}
+                    sortBy={SORT_TYPE.new}
+                    showCommentsByDefault
+                    hideTopBorder
+                    hideSortBy
+                    hideCloseComments
+                    hideCommentsHeader
+                    showRepliesInMainThread
+                    trackingField="publicBody"
+                    commentField="note"
+                    createComment={createComment}
+                    fetchComments={fetchComments}
+                    attachmentDownloadUrl={`${workspaceURI}/${SUBAPP_CODES.ticketing}/api/comments/attachments/${ticket.id}`}
+                  />
+                </section>
+              )}
+            </div>
+
+            {/* Right — sidebar */}
+            <aside className="flex flex-col gap-5 lg:sticky lg:top-6">
+              <TicketSidebar
                 categories={categories}
                 priorities={priorities}
                 contacts={contacts}
                 formFields={clone(workspace.config.ticketingFormFieldSet)}
-                showCancel={workspace.config.isDisplayCancelBtn}
-                showClose={workspace.config.isDisplayCloseBtn}
                 showAssignment={workspace.config.isDisplayAssignmentBtn}
               />
-            </div>
 
-            <div
-              className={cn(
-                'space-y-4 rounded-xl border border-ink-100 bg-white shadow-xs p-6',
-                {
-                  ['hidden']:
-                    !workspace.config.isDisplayTicketParent &&
-                    !workspace.config.isDisplayChildTicket &&
-                    !workspace.config.isDisplayRelatedTicket,
-                },
-              )}>
-              {workspace.config.isDisplayTicketParent && (
-                <Suspense fallback={<Skeleton className="h-[160px]" />}>
-                  <ParentTicket
-                    ticketId={ticket.id}
-                    projectId={ticket.project?.id}
-                    client={auth.tenant.client}
-                    fields={workspace.config.ticketingFieldSet}
-                  />
-                </Suspense>
-              )}
-              {workspace.config.isDisplayChildTicket && (
-                <Suspense fallback={<Skeleton className="h-[160px]" />}>
-                  <ChildTickets
-                    projectId={ticket.project?.id}
-                    ticketId={ticket.id}
-                    categories={categories}
-                    priorities={priorities}
-                    contacts={contacts}
-                    userId={auth.user.id}
-                    client={auth.tenant.client}
-                    fields={workspace.config.ticketingFieldSet}
-                    formFields={workspace.config.ticketingFormFieldSet}
-                  />
-                </Suspense>
-              )}
-              {workspace.config.isDisplayRelatedTicket && (
-                <Suspense fallback={<Skeleton className="h-[160px]" />}>
-                  <RelatedTickets
-                    ticketId={ticket.id}
-                    projectId={ticket.project?.id}
-                    client={auth.tenant.client}
-                    fields={workspace.config.ticketingFieldSet}
-                  />
-                </Suspense>
-              )}
-            </div>
-          </>
-        </TicketDetailsProvider>
-
-        {isCommentEnabled({subapp: SUBAPP_CODES.ticketing, workspace}) && (
-          <div className="rounded-xl border border-ink-100 bg-white shadow-xs p-6">
-            <h2 className="text-lg font-bold text-ink-900 mb-4">
-              {await t('Conversation')}
-            </h2>
-            <Comments
-              key={Math.random()}
-              recordId={ticket.id}
-              subapp={SUBAPP_CODES.ticketing}
-              sortBy={SORT_TYPE.new}
-              showCommentsByDefault
-              hideTopBorder
-              hideSortBy
-              hideCloseComments
-              hideCommentsHeader
-              showRepliesInMainThread
-              trackingField="publicBody"
-              commentField="note"
-              createComment={createComment}
-              fetchComments={fetchComments}
-              attachmentDownloadUrl={`${workspaceURI}/${SUBAPP_CODES.ticketing}/api/comments/attachments/${ticket.id}`}
-            />
+              <div
+                className={cn(
+                  'space-y-4 rounded-xl border border-ink-100 bg-white shadow-xs p-5',
+                  {
+                    ['hidden']:
+                      !workspace.config.isDisplayTicketParent &&
+                      !workspace.config.isDisplayChildTicket &&
+                      !workspace.config.isDisplayRelatedTicket,
+                  },
+                )}>
+                <h3 className="text-sm font-bold uppercase tracking-[0.06em] text-ink-400">
+                  {await t('Related tickets')}
+                </h3>
+                {workspace.config.isDisplayTicketParent && (
+                  <Suspense fallback={<Skeleton className="h-[120px]" />}>
+                    <ParentTicket
+                      ticketId={ticket.id}
+                      projectId={ticket.project?.id}
+                      client={auth.tenant.client}
+                      fields={workspace.config.ticketingFieldSet}
+                    />
+                  </Suspense>
+                )}
+                {workspace.config.isDisplayChildTicket && (
+                  <Suspense fallback={<Skeleton className="h-[120px]" />}>
+                    <ChildTickets
+                      projectId={ticket.project?.id}
+                      ticketId={ticket.id}
+                      categories={categories}
+                      priorities={priorities}
+                      contacts={contacts}
+                      userId={auth.user.id}
+                      client={auth.tenant.client}
+                      fields={workspace.config.ticketingFieldSet}
+                      formFields={workspace.config.ticketingFormFieldSet}
+                    />
+                  </Suspense>
+                )}
+                {workspace.config.isDisplayRelatedTicket && (
+                  <Suspense fallback={<Skeleton className="h-[120px]" />}>
+                    <RelatedTickets
+                      ticketId={ticket.id}
+                      projectId={ticket.project?.id}
+                      client={auth.tenant.client}
+                      fields={workspace.config.ticketingFieldSet}
+                    />
+                  </Suspense>
+                )}
+              </div>
+            </aside>
           </div>
-        )}
+        </TicketDetailsProvider>
       </div>
     </div>
   );
