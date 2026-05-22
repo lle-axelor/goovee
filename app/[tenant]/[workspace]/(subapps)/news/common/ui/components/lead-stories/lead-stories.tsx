@@ -24,8 +24,12 @@ export const LeadStories = ({
   const {workspaceURI} = useWorkspace();
 
   return (
-    <div className="flex flex-col gap-6">
-      {title && <div className="font-semibold text-xl">{title}</div>}
+    <div className="flex flex-col gap-5">
+      {title && (
+        <h2 className="font-bold text-xl text-ink-900 tracking-[-0.015em]">
+          {title}
+        </h2>
+      )}
       <div className="grid gap-5 sm:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <div className="col-span-2">
           {news
@@ -70,12 +74,12 @@ export const LeadStories = ({
               <Link
                 key={id}
                 href={`${workspaceURI}/${navigatingPathFrom}/${SUBAPP_PAGE.article}/${slug}`}
-                className="flex flex-col col-span-2 md:col-span-1 cursor-pointer">
-                <div className="w-full h-[150px]  relative">
+                className="group flex flex-col col-span-2 md:col-span-1 cursor-pointer bg-white rounded-xl border border-ink-100 shadow-xs overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-soft-md">
+                <div className="w-full h-[150px] relative bg-ink-50">
                   <Image
                     fill
                     sizes="(min-width: 1024px) 270px, (min-width: 768px) 480px, 100vw"
-                    className="rounded-t-lg object-cover"
+                    className="object-cover"
                     src={
                       image?.id
                         ? `${workspaceURI}/${SUBAPP_CODES.news}/api/news/${slug}/image?isFullView=true`
@@ -84,22 +88,22 @@ export const LeadStories = ({
                     alt={image?.fileName || i18n.t('News image')}
                   />
                 </div>
-                <div className="bg-white px-4 py-2 rounded-b-lg flex flex-col flex-1">
+                <div className="px-4 py-3 flex flex-col flex-1 gap-2">
                   <BadgeList
                     items={categorySet}
-                    rootClassName="z-10"
-                    labelClassName="rounded font-normal text-[8px] h-max"
+                    rootClassName="gap-1.5"
+                    labelClassName="rounded-full font-semibold text-[10px] px-2 py-0.5"
                   />
-                  <div className="flex-1 flex flex-col gap-2 mt-1">
-                    <div className="font-semibold text-base line-clamp-3 h-[72px]">
-                      {title}
-                    </div>
-                    <div className="font-medium text-xs line-clamp-3">
+                  <div className="font-bold text-sm text-ink-900 line-clamp-2 leading-snug">
+                    {title}
+                  </div>
+                  {description && (
+                    <div className="font-medium text-xs text-ink-500 line-clamp-2 leading-snug">
                       {description}
                     </div>
-                    <div className="flex-1 content-end font-medium text-[10px] mt-1 text-zinc-500">
-                      {formatRelativeTime(publicationDateTime)}
-                    </div>
+                  )}
+                  <div className="flex-1 content-end font-medium text-[11px] mt-1 text-ink-400">
+                    {formatRelativeTime(publicationDateTime)}
                   </div>
                 </div>
               </Link>
