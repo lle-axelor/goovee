@@ -72,10 +72,12 @@ export async function CategorySliderWrapper({
   workspace,
   client,
   user,
+  hideTitle,
 }: {
   workspace: PortalWorkspace | Cloned<PortalWorkspace>;
   user: any;
   client: Client;
+  hideTitle?: boolean;
 }) {
   const parentCategories = await findCategories({
     category: null,
@@ -88,7 +90,7 @@ export async function CategorySliderWrapper({
 
   return (
     <CategorySlider
-      showTitle={Boolean(parentCategories?.length)}
+      showTitle={!hideTitle && Boolean(parentCategories?.length)}
       title={categorySliderTitle}
       categories={parentCategories}
     />

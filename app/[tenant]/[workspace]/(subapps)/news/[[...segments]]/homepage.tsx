@@ -123,6 +123,7 @@ export async function Homepage({
                 workspace={workspace}
                 user={user}
                 client={client}
+                hideTitle
               />
             </section>
           </Suspense>
