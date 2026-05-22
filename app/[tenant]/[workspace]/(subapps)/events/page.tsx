@@ -70,9 +70,9 @@ export default async function Page(context: any) {
   }
 
   return (
-    <main className="bg-ink-25 w-full min-h-full">
+    <main className="bg-ink-25 w-full flex-1 min-h-0 flex flex-col">
       <Hero workspace={workspace} />
-      <div className="py-8 container mx-auto grid grid-cols-1 lg:grid-cols-[20rem_1fr] gap-6 mb-16 items-start">
+      <div className="py-8 container mx-auto grid grid-cols-1 lg:grid-cols-[20rem_1fr] gap-6 items-start">
         <Card className="p-4 border border-ink-100 shadow-xs flex flex-col gap-2 md:flex-row lg:flex-col h-fit rounded-xl bg-white lg:sticky lg:top-6">
           <EventCalendar
             dateOfEvent={date}
