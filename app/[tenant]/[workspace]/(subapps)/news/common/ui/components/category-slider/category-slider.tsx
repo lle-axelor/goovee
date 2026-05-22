@@ -36,22 +36,24 @@ export const CategorySlider = ({
   const pathname = usePathname();
   const {workspaceURI} = useWorkspace();
 
-  if (!showTitle) {
+  if (!categories?.length) {
     return null;
   }
   return (
     <div className="flex flex-col gap-6 mt-6">
-      <div className="flex justify-between">
-        <span className="font-semibold text-xl">{title}</span>
-        {showButton && (
-          <Button
-            variant="success"
-            className="flex gap-2 text-white px-3 py-[6px] rounded-md hover:bg-success-dark">
-            <Icon className="w-6 h-6" />
-            <span className="text-base font-medium"> {buttonText}</span>
-          </Button>
-        )}
-      </div>
+      {(showTitle || showButton) && (
+        <div className="flex justify-between">
+          {showTitle && <span className="font-semibold text-xl">{title}</span>}
+          {showButton && (
+            <Button
+              variant="success"
+              className="flex gap-2 text-white px-3 py-[6px] rounded-md hover:bg-success-dark">
+              <Icon className="w-6 h-6" />
+              <span className="text-base font-medium"> {buttonText}</span>
+            </Button>
+          )}
+        </div>
+      )}
 
       {categories?.length ? (
         <div>
