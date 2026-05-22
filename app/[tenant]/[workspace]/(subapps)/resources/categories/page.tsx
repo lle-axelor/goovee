@@ -126,54 +126,68 @@ export default async function Page(props: {
   const canUpload = permissionSelect && permissionSelect === ACTION.UPLOAD;
 
   return (
-    <main className="container p-4 mx-auto space-y-6">
-      <div className="grid md:grid-cols-[1fr_auto] gap-2">
-        <h2 className="font-semibold text-xl leading-8 grow">
-          {await t('Resource Category')}
-        </h2>
-        {user && (
-          <div className="flex items-center gap-2">
-            {canWrite && (
-              <Link
-                href={`${workspaceURI}/resources/categories/create?id=${id}`}>
-                <Button variant="success" className="flex items-center">
-                  <MdAdd className="size-6" />
-                  <span>{await t('New Category')}</span>
-                </Button>
-              </Link>
-            )}
-            {(canWrite || canUpload) && (
-              <Link href={`${workspaceURI}/resources/create?id=${id}`}>
-                <Button variant="success" className="flex items-center">
-                  <MdAdd className="size-6" />
-                  <span>{await t('New Resource')}</span>
-                </Button>
-              </Link>
+    <div className="bg-ink-25 min-h-full">
+      <main className="container p-4 mx-auto space-y-6 py-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-400 mb-1">
+              {await t('Documents')}
+            </p>
+            <h1 className="text-3xl font-bold text-ink-900 tracking-[-0.01em]">
+              {file?.fileName ?? (await t('Resource Category'))}
+            </h1>
+            {file?.description && (
+              <p className="text-sm text-ink-500 mt-2 max-w-2xl">
+                {file.description}
+              </p>
             )}
           </div>
-        )}
-      </div>
-      <p className="leading-5 text-sm">
-        {file?.description ? file.description : ''}
-      </p>
-      <div className="grid sm:grid-cols-4 gap-5">
-        <div className="bg-white rounded-lg py-6 px-2">
-          <Suspense fallback={<ExplorerSkeleton />}>
-            <Categories workspace={workspace} client={client} user={user} />
-          </Suspense>
+          {user && (
+            <div className="flex items-center gap-2 shrink-0">
+              {canWrite && (
+                <Button
+                  asChild
+                  variant="ink-outline"
+                  className="flex items-center gap-1.5">
+                  <Link
+                    href={`${workspaceURI}/resources/categories/create?id=${id}`}>
+                    <MdAdd className="size-5" />
+                    <span>{await t('New Category')}</span>
+                  </Link>
+                </Button>
+              )}
+              {(canWrite || canUpload) && (
+                <Button
+                  asChild
+                  variant="royal"
+                  className="flex items-center gap-1.5">
+                  <Link href={`${workspaceURI}/resources/create?id=${id}`}>
+                    <MdAdd className="size-5" />
+                    <span>{await t('New Resource')}</span>
+                  </Link>
+                </Button>
+              )}
+            </div>
+          )}
         </div>
-        <div className="sm:hidden">{/* <SortBy /> */}</div>
-        <div className="sm:col-span-3 overflow-auto">
-          <Suspense fallback={<ResourceListSkeleton />}>
-            <Resources
-              workspace={workspace}
-              client={client}
-              user={user}
-              category={id}
-            />
-          </Suspense>
+        <div className="grid sm:grid-cols-4 gap-5 items-start">
+          <aside className="bg-white rounded-xl border border-ink-100 shadow-xs py-4 px-2">
+            <Suspense fallback={<ExplorerSkeleton />}>
+              <Categories workspace={workspace} client={client} user={user} />
+            </Suspense>
+          </aside>
+          <div className="sm:col-span-3 overflow-auto">
+            <Suspense fallback={<ResourceListSkeleton />}>
+              <Resources
+                workspace={workspace}
+                client={client}
+                user={user}
+                category={id}
+              />
+            </Suspense>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }

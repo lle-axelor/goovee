@@ -41,25 +41,40 @@ export default function Categories({items}: any) {
             key={id}
             className="!mr-0 !w-[281px] cursor-pointer"
             onClick={handleRedirection(id)}>
-            <div className="space-y-2">
-              <div className="!h-[144px] bg-white rounded-lg flex justify-center items-center">
+            <article className="group h-full bg-white rounded-xl border border-ink-100 shadow-xs hover:shadow-soft-md transition-shadow overflow-hidden">
+              <div
+                className="h-[160px] flex justify-center items-center"
+                style={{
+                  background: color
+                    ? `linear-gradient(135deg, ${color}22, ${color}11)`
+                    : 'hsl(var(--ink-50))',
+                }}>
                 {icon ? (
-                  <DynamicIcon className="h-16 w-16" fill={color} icon={icon} />
+                  <DynamicIcon
+                    className="h-14 w-14"
+                    fill={color || 'hsl(var(--royal))'}
+                    icon={icon}
+                  />
                 ) : (
-                  <MdOutlineCategory className="h-16 w-16" fill={color} />
+                  <MdOutlineCategory
+                    className="h-14 w-14"
+                    style={{color: color || 'hsl(var(--royal))'}}
+                  />
                 )}
               </div>
-              <div className="space-y-2">
-                <h3 className="font-semibold leading-6 text-center">
+              <div className="p-4 space-y-1.5">
+                <h3 className="font-bold text-sm text-ink-900 leading-snug line-clamp-1">
                   {fileName}
                 </h3>
-                <p
-                  className="leading-4 text-[0.625rem] px-4 text-muted-foreground line-clamp-3"
-                  title={description}>
-                  {description}
-                </p>
+                {description && (
+                  <p
+                    className="text-xs text-ink-500 leading-snug line-clamp-2"
+                    title={description}>
+                    {description}
+                  </p>
+                )}
               </div>
-            </div>
+            </article>
           </SwiperSlide>
         ),
       )}

@@ -78,33 +78,42 @@ export default async function Page(props: {
   const size = file?.metaFile?.sizeText || '--';
 
   return (
-    <main className="container p-4 mx-auto space-y-6 h-full bg-white rounded-lg flex flex-col gap-6 overflow-hidden">
-      <div className="border-b flex flex-col gap-4 pb-4 w-full">
-        <div className="flex gap-4">
-          <div className="grow flex flex-col">
-            <div className="flex items-center gap-2">
-              <MdWeb className="h-6 w-6" />
-              <h2 className="font-semibold text-xl leading-5">{name}</h2>
+    <div className="bg-ink-25 min-h-full flex-1 flex flex-col">
+      <main className="container p-4 mx-auto space-y-5 py-6 flex-1 flex flex-col min-h-0">
+        <section className="bg-white rounded-xl border border-ink-100 shadow-xs p-6">
+          <div className="flex items-start gap-4">
+            <div className="grow min-w-0 flex flex-col gap-3">
+              <div className="flex items-start gap-3">
+                <MdWeb className="h-7 w-7 text-royal shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-400 mb-1">
+                    {await t('Document')}
+                  </p>
+                  <h1 className="font-bold text-2xl text-ink-900 leading-tight tracking-[-0.01em] break-words">
+                    {name}
+                  </h1>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-4 text-xs text-ink-500 leading-tight">
+                <PostedBy date={date} author={author} />
+                <span className="tabular-nums">
+                  <span className="font-semibold text-ink-700">
+                    {await t('Size')}:
+                  </span>{' '}
+                  {size}
+                </span>
+              </div>
+            </div>
+            <div className="shrink-0 flex items-center gap-2">
+              <MdHistory className="hidden h-10 w-10 text-ink-400 cursor-pointer" />
+              <DownloadIcon record={file} />
             </div>
           </div>
-          <MdHistory className="hidden h-10 w-10 text-muted-foreground cursor-pointer" />
-          <DownloadIcon record={file} />
-        </div>
-        <div className="flex items-start gap-4 text-xs leading-4">
-          <PostedBy date={date} author={author} />
-          <p className="pe-2">
-            <span className="font-semibold">{await t('Size')}: </span>
-            {size}
-          </p>
-          <p className="hidden">
-            <span className="font-semibold">{await t('Views')}: </span>
-            43
-          </p>
-        </div>
-      </div>
-      <div className="grow overflow-auto">
-        <Viewer record={file} />
-      </div>
-    </main>
+        </section>
+        <section className="bg-white rounded-xl border border-ink-100 shadow-xs flex-1 min-h-0 overflow-auto">
+          <Viewer record={file} />
+        </section>
+      </main>
+    </div>
   );
 }

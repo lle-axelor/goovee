@@ -87,17 +87,46 @@ export default async function Page(props: {
   }
 
   return (
-    <>
+    <div className="bg-ink-25 min-h-full">
       <Hero workspace={workspace} workspaceURI={workspaceURI} />
-      <main className="container p-4 mx-auto space-y-6">
-        <Suspense fallback={<CategoriesSkeleton />}>
-          <LatestCategories workspace={workspace} client={client} user={user} />
-        </Suspense>
-        <h2 className="font-semibold text-xl">{i18n.t('New Resources')}</h2>
-        <Suspense fallback={<ResourceListSkeleton />}>
-          <LatestResources workspace={workspace} client={client} user={user} />
-        </Suspense>
+      <main className="container p-4 mx-auto space-y-8 py-8">
+        <section>
+          <header className="mb-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-400 mb-1">
+              {i18n.t('Browse')}
+            </p>
+            <h2 className="font-bold text-2xl text-ink-900">
+              {i18n.t('Document categories')}
+            </h2>
+          </header>
+          <Suspense fallback={<CategoriesSkeleton />}>
+            <LatestCategories
+              workspace={workspace}
+              client={client}
+              user={user}
+            />
+          </Suspense>
+        </section>
+        <section>
+          <header className="mb-4 flex items-end justify-between">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-400 mb-1">
+                {i18n.t('Latest')}
+              </p>
+              <h2 className="font-bold text-2xl text-ink-900">
+                {i18n.t('New Resources')}
+              </h2>
+            </div>
+          </header>
+          <Suspense fallback={<ResourceListSkeleton />}>
+            <LatestResources
+              workspace={workspace}
+              client={client}
+              user={user}
+            />
+          </Suspense>
+        </section>
       </main>
-    </>
+    </div>
   );
 }
