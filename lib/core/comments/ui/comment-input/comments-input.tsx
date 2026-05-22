@@ -124,8 +124,8 @@ export function CommentInput({
                         )}
                         <Button
                           type="submit"
-                          className="px-6 py-1.5 h-9 text-base font-medium"
-                          variant="success"
+                          className="px-5 py-1.5 h-9 text-sm font-semibold"
+                          variant="royal"
                           disabled={isSubmitting || disabled}>
                           {i18n.t('Send')}
                         </Button>
@@ -202,13 +202,13 @@ const TextArea = forwardRef<
   return (
     <div
       className={cn(
-        'flex items-end flex-wrap rounded-md border border-input bg-white pr-1 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
+        'flex items-end flex-wrap rounded-lg border border-ink-150 bg-white pr-1 text-sm transition-shadow focus-within:border-royal focus-within:shadow-[0_0_0_3px_rgba(21,84,181,0.12)]',
       )}>
       <div className="flex flex-col grow">
         <AutosizeTextarea
           ref={ref}
           className={cn(
-            'placeholder:text-sm placeholder:text-gray-dark border-none focus-visible:outline-none focus-visible:!ring-0 focus-visible:ring-none resize-none',
+            'placeholder:text-sm placeholder:text-ink-400 border-none focus-visible:outline-none focus-visible:!ring-0 focus-visible:ring-none resize-none',
             className,
           )}
           {...rest}
