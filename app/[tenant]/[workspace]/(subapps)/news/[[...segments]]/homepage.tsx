@@ -77,8 +77,8 @@ async function HomePageNewsFeed({
         </div>
       </Suspense>
 
-      <Suspense fallback={<NewsCardSkeleton count={5} />}>
-        <div className="grid gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
+      <Suspense fallback={<NewsCardSkeleton count={3} />}>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <HomePageFooterNewsWrapper workspace={workspace} client={client} />
         </div>
       </Suspense>
@@ -97,8 +97,9 @@ export async function Homepage({
   const user = session?.user;
 
   return (
-    <div className={`flex flex-col h-full flex-1 ${styles['news-container']}`}>
-      <div className="hidden lg:block relative">
+    <div
+      className={`bg-ink-25 flex flex-col h-full flex-1 ${styles['news-container']}`}>
+      <div className="hidden lg:block relative bg-white border-b border-ink-100">
         <Suspense fallback={<NavMenuSkeleton />}>
           <NavMenuWrapper workspace={workspace} client={client} user={user} />
         </Suspense>
@@ -107,20 +108,40 @@ export async function Homepage({
       <div className="h-full flex flex-col">
         <Hero workspace={workspace} />
 
-        <div className="container mx-auto grid grid-cols-1 gap-6 mb-20 lg:mb-0">
+        <div className="container mx-auto grid grid-cols-1 gap-8 py-8 mb-20 lg:mb-0">
           <Suspense fallback={<CategoriesSkeleton />}>
-            <CategorySliderWrapper
-              workspace={workspace}
-              user={user}
-              client={client}
-            />
+            <section>
+              <header className="mb-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-400 mb-1">
+                  {await t('Browse')}
+                </p>
+                <h2 className="font-bold text-2xl text-ink-900">
+                  {await t('Categories')}
+                </h2>
+              </header>
+              <CategorySliderWrapper
+                workspace={workspace}
+                user={user}
+                client={client}
+              />
+            </section>
           </Suspense>
           <Suspense fallback={<HomeNewsFeedSkeleton />}>
-            <HomePageNewsFeed
-              workspace={workspace}
-              user={user}
-              client={client}
-            />
+            <section className="flex flex-col gap-8">
+              <header>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-400 mb-1">
+                  {await t('Latest')}
+                </p>
+                <h2 className="font-bold text-2xl text-ink-900">
+                  {await t('News')}
+                </h2>
+              </header>
+              <HomePageNewsFeed
+                workspace={workspace}
+                user={user}
+                client={client}
+              />
+            </section>
           </Suspense>
         </div>
       </div>

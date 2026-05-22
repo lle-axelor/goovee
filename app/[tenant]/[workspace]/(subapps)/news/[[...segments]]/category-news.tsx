@@ -124,8 +124,9 @@ export async function CategoryNews({
   const user = session?.user;
 
   return (
-    <div className={`flex flex-col h-full flex-1 ${styles['news-container']}`}>
-      <div className="hidden lg:block relative">
+    <div
+      className={`bg-ink-25 flex flex-col h-full flex-1 ${styles['news-container']}`}>
+      <div className="hidden lg:block relative bg-white border-b border-ink-100 sticky top-0 z-10">
         <Suspense fallback={<NavMenuSkeleton />}>
           <NavMenuWrapper workspace={workspace} client={client} user={user} />
         </Suspense>

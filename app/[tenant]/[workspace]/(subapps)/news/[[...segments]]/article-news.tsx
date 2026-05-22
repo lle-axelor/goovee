@@ -83,10 +83,10 @@ export async function ArticleNews({
     workspace.config?.enableRecommendedNews || false;
 
   return (
-    <div className={`container mx-auto grid grid-cols-1 gap-6 mt-6`}>
-      {!directRoute && (
-        <Suspense fallback={<BreadcrumbsSkeleton />}>
-          <div className="py-4">
+    <div className="bg-ink-25 min-h-full">
+      <div className="container mx-auto grid grid-cols-1 gap-6 py-6">
+        {!directRoute && (
+          <Suspense fallback={<BreadcrumbsSkeleton />}>
             <BreadcrumbsWrapper
               workspace={workspace}
               client={client}
@@ -94,65 +94,62 @@ export async function ArticleNews({
               newsTitle={newsObject.title}
               user={user}
             />
+          </Suspense>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          {/* Main News Info Section */}
+          <article className="lg:col-span-2 bg-white rounded-xl border border-ink-100 shadow-xs overflow-hidden">
+            <Suspense fallback={<NewsInfoSkeleton />}>
+              <NewsInfoWrapper news={newsObject} workspace={workspace} />
+            </Suspense>
+          </article>
+
+          <aside className="w-full flex flex-col gap-6 lg:sticky lg:top-6">
+            <Suspense fallback={<SocialMediaSkeleton />}>
+              <SocialMediaWrapper workspace={workspace} />
+            </Suspense>
+
+            <Suspense fallback={<AttachmentListSkeleton />}>
+              <AttachmentListWrapper
+                workspace={workspace}
+                client={client}
+                slug={newsObject.slug}
+              />
+            </Suspense>
+
+            <Suspense fallback={<FeedListSkeleton width="w-full" />}>
+              <RelatedNewsWrapper
+                workspace={workspace}
+                client={client}
+                slug={newsObject.slug}
+                navigatingPathFrom={navigatingPathFromURL}
+              />
+            </Suspense>
+
+            <Suspense fallback={<FeedListSkeleton width="w-full" />}>
+              <RecommendedNewsWrapper
+                isRecommendationEnable={isRecommendationEnable}
+                navigatingPathFrom={navigatingPathFromURL}
+                workspaceURL={workspaceURL}
+                tenantId={tenantId}
+                categoryIds={categoryIds}
+              />
+            </Suspense>
+          </aside>
+        </div>
+
+        <Suspense fallback={<CommentsSkeleton />}>
+          <div className="bg-white rounded-xl border border-ink-100 shadow-xs p-6">
+            <CommentsWrapper
+              news={newsObject}
+              workspace={workspace}
+              user={user}
+              workspaceURI={workspaceURI}
+            />
           </div>
         </Suspense>
-      )}
-
-      <div className=" grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main News Info Section */}
-        <div className="lg:col-span-2">
-          <Suspense fallback={<NewsInfoSkeleton />}>
-            <NewsInfoWrapper news={newsObject} workspace={workspace} />
-          </Suspense>
-        </div>
-
-        <div className="w-full flex flex-col gap-6">
-          {/* SocialMedia Section */}
-          <Suspense fallback={<SocialMediaSkeleton />}>
-            <SocialMediaWrapper workspace={workspace} />
-          </Suspense>
-
-          {/* Attachments Section */}
-          <Suspense fallback={<AttachmentListSkeleton />}>
-            <AttachmentListWrapper
-              workspace={workspace}
-              client={client}
-              slug={newsObject.slug}
-            />
-          </Suspense>
-
-          {/* RelatedNews Section */}
-          <Suspense fallback={<FeedListSkeleton width="w-full" />}>
-            <RelatedNewsWrapper
-              workspace={workspace}
-              client={client}
-              slug={newsObject.slug}
-              navigatingPathFrom={navigatingPathFromURL}
-            />
-          </Suspense>
-
-          {/* RecommendedNews Section */}
-          <Suspense fallback={<FeedListSkeleton width="w-full" />}>
-            <RecommendedNewsWrapper
-              isRecommendationEnable={isRecommendationEnable}
-              navigatingPathFrom={navigatingPathFromURL}
-              workspaceURL={workspaceURL}
-              tenantId={tenantId}
-              categoryIds={categoryIds}
-            />
-          </Suspense>
-        </div>
       </div>
-
-      {/* Comments Section */}
-      <Suspense fallback={<CommentsSkeleton />}>
-        <CommentsWrapper
-          news={newsObject}
-          workspace={workspace}
-          user={user}
-          workspaceURI={workspaceURI}
-        />
-      </Suspense>
     </div>
   );
 }
