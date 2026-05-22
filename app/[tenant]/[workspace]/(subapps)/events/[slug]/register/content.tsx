@@ -17,8 +17,8 @@ const Content = ({
   user: any;
 }) => {
   return (
-    <>
-      <main className="container mx-auto  flex-1 py-6 flex flex-col lg:flex-row gap-6 pb-20">
+    <div className="bg-ink-25 min-h-full">
+      <main className="container mx-auto flex-1 py-8 flex flex-col lg:flex-row gap-6 pb-20 max-w-4xl">
         <div className="order-2 lg:order-1 space-y-6 w-full">
           <RegistrationForm
             eventDetails={eventDetails}
@@ -28,7 +28,7 @@ const Content = ({
           />
         </div>
       </main>
-    </>
+    </div>
   );
 };
 
