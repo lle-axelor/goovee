@@ -12,6 +12,8 @@ export const ROUTES = {
   directory: 'directory',
 };
 
+// ---- Legacy 9-item menus (kept for now; superseded visually by ACCOUNT_TABS) ----
+
 export const GLOBAL_MENU = [
   {
     label: 'Personal settings',
@@ -57,6 +59,43 @@ export const ADMIN_WORKSPACE_MENU = [
     route: ROUTES.members,
   },
   ...WORKSPACE_MENU,
+];
+
+// ---- New 4-tab grouping (visual layer over the 9 routes) ----
+
+export type AccountTab = {
+  key: 'profile' | 'security' | 'notifications' | 'workspace';
+  label: string;
+  subtitle: string;
+  routes: string[];
+  adminOnly?: boolean;
+};
+
+export const ACCOUNT_TABS: AccountTab[] = [
+  {
+    key: 'profile',
+    label: 'Profile',
+    subtitle: 'Identity, preferences, directory visibility',
+    routes: [ROUTES.personal, ROUTES.prefrences, ROUTES.directory],
+  },
+  {
+    key: 'security',
+    label: 'Security',
+    subtitle: 'Password and addresses',
+    routes: [ROUTES.password, ROUTES.addresses],
+  },
+  {
+    key: 'notifications',
+    label: 'Notifications',
+    subtitle: 'Push and e-mail preferences',
+    routes: [ROUTES.notifications],
+  },
+  {
+    key: 'workspace',
+    label: 'Workspace',
+    subtitle: 'Members, applications and space settings',
+    routes: [ROUTES.members, ROUTES.apps, ROUTES.settings],
+  },
 ];
 
 export const RoleLabel = {

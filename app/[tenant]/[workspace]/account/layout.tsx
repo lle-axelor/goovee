@@ -36,7 +36,7 @@ export default async function Layout(props: {
     );
 
   return (
-    <div className="p-0 lg:space-y-6 mb-20 lg:py-4 lg:px-12 !lg:mb-6">
+    <div className="flex-1 min-h-0 flex flex-col mb-20 lg:mb-0">
       <LayoutContent isAdmin={isAdmin}>{children}</LayoutContent>
     </div>
   );

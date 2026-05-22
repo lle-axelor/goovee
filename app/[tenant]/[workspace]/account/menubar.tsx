@@ -2,6 +2,13 @@
 
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
+import {
+  MdOutlinePerson,
+  MdOutlineLock,
+  MdOutlineNotificationsActive,
+  MdOutlineWorkspaces,
+} from 'react-icons/md';
+import {IconType} from 'react-icons';
 
 // ---- CORE IMPORTS ---- //
 import {i18n} from '@/locale';
@@ -9,61 +16,67 @@ import {cn} from '@/utils/css';
 import {useWorkspace} from '@/app/[tenant]/[workspace]/workspace-context';
 
 // ---- LOCAL IMPORTS ---- //
-import {
-  GLOBAL_MENU,
-  WORKSPACE_MENU,
-  ADMIN_WORKSPACE_MENU,
-} from './common/constants';
+import {ACCOUNT_TABS, type AccountTab} from './common/constants';
 
-type Item = {
-  label: string;
-  route: string;
+const TAB_ICONS: Record<AccountTab['key'], IconType> = {
+  profile: MdOutlinePerson,
+  security: MdOutlineLock,
+  notifications: MdOutlineNotificationsActive,
+  workspace: MdOutlineWorkspaces,
 };
 
-function MenuItem({item}: {item: Item}) {
-  const pathname = usePathname();
-  const {workspaceURI} = useWorkspace();
-
-  return (
-    <div
-      key={item.route}
-      title={i18n.t(item.label)}
-      className={cn(
-        'line-clamp-1 text-center p-1 font-medium text-sm lg:line-clamp-none lg:text-left lg:font-normal lg:ps-8 rounded-sm cursor-pointer',
-        {
-          ['bg-success-light text-success']: pathname.includes(item.route),
-        },
-      )}>
-      <Link key={item.route} href={`${workspaceURI}/account/${item.route}`}>
-        {i18n.t(item.label)}
-      </Link>
-    </div>
-  );
-}
-
-function Menu({title, items}: {title: string; items: Item[]}) {
-  return (
-    <div className="space-y-2">
-      <h2 className="py-1 lg:px-4 text-sm font-semibold">{title}</h2>
-      <div className="h-[1px] border-b" />
-      <div
-        className={`grid grid-cols-${items?.length || 1} items-center lg:block lg:space-y-8`}>
-        {items.map(item => (
-          <MenuItem key={item.route} item={item} />
-        ))}
-      </div>
-    </div>
-  );
+function isTabActive(pathname: string, tab: AccountTab): boolean {
+  return tab.routes.some(route => pathname.includes(`/account/${route}`));
 }
 
 export default function Sidebar({isAdmin}: {isAdmin: boolean}) {
+  const pathname = usePathname();
+  const {workspaceURI} = useWorkspace();
+
+  const tabs = ACCOUNT_TABS.filter(tab => !tab.adminOnly || isAdmin);
+
   return (
-    <div className="space-y-4 p-2 bg-white lg:bg-inherit lg:border-e lg:space-y-10 lg:px-0 lg:py-2">
-      <Menu title={i18n.t('Global')} items={GLOBAL_MENU} />
-      <Menu
-        title={i18n.t('Workspace')}
-        items={isAdmin ? ADMIN_WORKSPACE_MENU : WORKSPACE_MENU}
-      />
-    </div>
+    <nav className="flex flex-col gap-2 p-2 lg:p-0">
+      {tabs.map(tab => {
+        const Icon = TAB_ICONS[tab.key];
+        const active = isTabActive(pathname, tab);
+        const href = `${workspaceURI}/account/${tab.routes[0]}`;
+
+        return (
+          <Link
+            key={tab.key}
+            href={href}
+            className={cn(
+              'group flex items-start gap-3 rounded-xl p-3 transition-colors',
+              'border',
+              active
+                ? 'bg-royal-pale border-royal text-ink-900'
+                : 'bg-white border-ink-100 text-ink-700 hover:border-ink-200 hover:bg-ink-25',
+            )}>
+            <span
+              className={cn(
+                'shrink-0 w-9 h-9 rounded-lg grid place-items-center',
+                active
+                  ? 'bg-royal text-white'
+                  : 'bg-ink-50 text-ink-500 group-hover:bg-royal-pale group-hover:text-royal',
+              )}>
+              <Icon className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold leading-tight">
+                {i18n.t(tab.label)}
+              </p>
+              <p
+                className={cn(
+                  'text-xs leading-snug mt-0.5',
+                  active ? 'text-ink-700' : 'text-ink-500',
+                )}>
+                {i18n.t(tab.subtitle)}
+              </p>
+            </div>
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
