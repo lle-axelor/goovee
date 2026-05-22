@@ -58,9 +58,9 @@ export const Thread = ({
   }, [post?.id, scrollToPost]);
 
   return (
-    <div
+    <article
       id={`post-${post?.id}`}
-      className="bg-white rounded-lg flex flex-col gap-4 pt-4 pb-0 rounded-t-lg">
+      className="bg-white rounded-xl border border-ink-100 shadow-xs flex flex-col gap-4 pt-4 pb-0 overflow-hidden">
       {showHeader && <ThreadHeader group={forumGroup} />}
       <ThreadBody
         post={post}
@@ -74,7 +74,7 @@ export const Thread = ({
         showCommentsByDefault={showCommentsByDefault}
         workspace={workspace}
       />
-    </div>
+    </article>
   );
 };
 

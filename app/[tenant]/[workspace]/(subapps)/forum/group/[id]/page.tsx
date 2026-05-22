@@ -100,24 +100,28 @@ async function ForumGroup({
   }
 
   return (
-    <div className="flex flex-col h-full flex-1">
+    <div className="bg-ink-25 flex flex-col h-full flex-1">
       <div className="hidden lg:block">
         <NavMenu items={MENU} />
       </div>
       <Hero selectedGroup={selectedGroup} workspace={workspace} />
-      <div className="container py-6 mx-auto grid grid-cols-1 md:grid-cols-[17.563rem_1fr] gap-5">
-        <GroupControls
-          memberGroups={memberGroups}
-          nonMemberGroups={nonMemberGroups}
-          user={$user}
-          selectedGroup={selectedGroup}
-        />
-        <div>
-          <ComposePost
-            user={$user}
+      <div className="container py-8 mx-auto grid grid-cols-1 md:grid-cols-[17.563rem_1fr] gap-6 items-start">
+        <aside className="md:sticky md:top-6">
+          <GroupControls
             memberGroups={memberGroups}
+            nonMemberGroups={nonMemberGroups}
+            user={$user}
             selectedGroup={selectedGroup}
           />
+        </aside>
+        <div className="flex flex-col gap-6">
+          <div className="bg-white rounded-xl border border-ink-100 shadow-xs p-4">
+            <ComposePost
+              user={$user}
+              memberGroups={memberGroups}
+              selectedGroup={selectedGroup}
+            />
+          </div>
           <Tabs activeTab={type} />
           <Suspense fallback={<ThreadListSkeleton />}>
             {type === FORUM_CONTENT.POSTS && (

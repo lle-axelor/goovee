@@ -90,22 +90,26 @@ export default async function Page(props: {
   }).then(clone)) as User;
 
   return (
-    <div className="flex flex-col h-full flex-1">
+    <div className="bg-ink-25 flex flex-col h-full flex-1">
       <div className="hidden lg:block">{/* <NavMenu items={MENU} /> */}</div>
       <Hero selectedGroup={null} workspace={workspace} />
-      <div className="container py-6 mx-auto grid grid-cols-1 md:grid-cols-3 gap-5">
-        <GroupControls
-          memberGroups={memberGroups}
-          nonMemberGroups={nonMemberGroups}
-          user={$user}
-          selectedGroup={null}
-        />
-        <div className="col-span-2">
-          <ComposePost
-            user={$user}
+      <div className="container py-8 mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <aside className="md:sticky md:top-6">
+          <GroupControls
             memberGroups={memberGroups}
+            nonMemberGroups={nonMemberGroups}
+            user={$user}
             selectedGroup={null}
           />
+        </aside>
+        <div className="col-span-2 flex flex-col gap-6">
+          <div className="bg-white rounded-xl border border-ink-100 shadow-xs p-4">
+            <ComposePost
+              user={$user}
+              memberGroups={memberGroups}
+              selectedGroup={null}
+            />
+          </div>
           <Tabs activeTab={type} />
           <Suspense fallback={<ThreadListSkeleton />}>
             {type === FORUM_CONTENT.POSTS && (
