@@ -1,6 +1,8 @@
 import {Role} from '../types';
 
 export const ROUTES = {
+  // Legacy routes — kept for backwards compatibility; each redirects
+  // to its new consolidated route.
   personal: 'personal',
   prefrences: 'preferences',
   password: 'password',
@@ -10,6 +12,11 @@ export const ROUTES = {
   apps: 'apps',
   settings: 'settings',
   directory: 'directory',
+
+  // New consolidated routes (4-tab fusion)
+  profile: 'profile',
+  security: 'security',
+  workspace: 'workspace',
 };
 
 // ---- Legacy 9-item menus (kept for now; superseded visually by ACCOUNT_TABS) ----
@@ -76,13 +83,18 @@ export const ACCOUNT_TABS: AccountTab[] = [
     key: 'profile',
     label: 'Profile',
     subtitle: 'Identity, preferences, directory visibility',
-    routes: [ROUTES.personal, ROUTES.prefrences, ROUTES.directory],
+    routes: [
+      ROUTES.profile,
+      ROUTES.personal,
+      ROUTES.prefrences,
+      ROUTES.directory,
+    ],
   },
   {
     key: 'security',
     label: 'Security',
     subtitle: 'Password and addresses',
-    routes: [ROUTES.password, ROUTES.addresses],
+    routes: [ROUTES.security, ROUTES.password, ROUTES.addresses],
   },
   {
     key: 'notifications',
@@ -94,7 +106,7 @@ export const ACCOUNT_TABS: AccountTab[] = [
     key: 'workspace',
     label: 'Workspace',
     subtitle: 'Members, applications and space settings',
-    routes: [ROUTES.members, ROUTES.apps, ROUTES.settings],
+    routes: [ROUTES.workspace, ROUTES.members, ROUTES.apps, ROUTES.settings],
   },
 ];
 
