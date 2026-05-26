@@ -7,53 +7,30 @@ import {getSession} from '@/auth';
 import {findWorkspace} from '@/orm/workspace';
 import {clone} from '@/utils';
 import {workspacePathname} from '@/utils/workspace';
-import {Card} from '@/ui/components/card';
 import {ORDER_BY} from '@/constants';
-import type {User} from '@/types';
+import {t} from '@/lib/core/locale/server';
 import type {PortalWorkspace} from '@/orm/workspace';
 import {manager} from '@/tenant';
-import type {Client} from '@/goovee/.generated/client';
 
 // ---- LOCAL IMPORTS ---- //
-import {
-  EVENT_TAB_ITEMS,
-  EVENT_TYPE,
-  LIMIT,
-} from '@/subapps/events/common/constants';
+import {EVENT_TYPE} from '@/subapps/events/common/constants';
 import {findEvents} from '@/subapps/events/common/orm/event';
 import {findEventCategories} from '@/subapps/events/common/orm/event-category';
 import {
-  EventCalendar,
-  EventCardSkeleton,
-  EventCategoryList,
-  EventCategorySkeleton,
-  EventCollapsible,
-  EventTabs,
-  EventTabsContent,
+  MagazineHub,
+  type MagazineHubLabels,
 } from '@/subapps/events/common/ui/components';
-import Hero from './hero';
+
+const MAGAZINE_LIMIT = 13; // 1 featured + 12 in the grid (max)
 
 export default async function Page(context: any) {
   const params = await context?.params;
-  const page = (await context?.searchParams)?.page || 1;
-  const category = (await context?.searchParams)?.category
-    ? Array.isArray((await context?.searchParams)?.category)
-      ? (await context?.searchParams)?.category
-      : [(await context?.searchParams)?.category]
-    : [];
-
-  const date = (await context?.searchParams)?.date || undefined;
-  const type = (await context?.searchParams)?.type || EVENT_TYPE.ACTIVE;
-
-  if (!EVENT_TAB_ITEMS.some(item => item.label === type)) {
-    return notFound();
-  }
   const {tenant: tenantId} = params;
 
   const session = await getSession();
   const user = session?.user;
 
-  const {workspaceURL} = workspacePathname(params);
+  const {workspaceURL, workspaceURI} = workspacePathname(params);
 
   const tenant = await manager.getTenant(tenantId);
   if (!tenant) return notFound();
@@ -64,105 +41,159 @@ export default async function Page(context: any) {
     url: workspaceURL,
     client,
   }).then(clone);
-
-  if (!workspace) {
-    return notFound();
-  }
+  if (!workspace) return notFound();
 
   return (
     <main className="bg-ink-25 w-full flex-1 min-h-0 flex flex-col">
-      <Hero workspace={workspace} />
-      <div className="py-8 container mx-auto grid grid-cols-1 lg:grid-cols-[20rem_1fr] gap-6 items-start">
-        <Card className="p-4 border border-ink-100 shadow-xs flex flex-col gap-2 md:flex-row lg:flex-col h-fit rounded-xl bg-white lg:sticky lg:top-6">
-          <EventCalendar
-            dateOfEvent={date}
-            workspace={workspace}
-            tabs={EVENT_TAB_ITEMS}
-          />
-          <EventCollapsible>
-            <Suspense fallback={<EventCategorySkeleton />}>
-              <Categories
-                user={user}
-                client={client}
-                workspace={workspace}
-                category={category}
-              />
-            </Suspense>
-          </EventCollapsible>
-        </Card>
-        <EventTabs eventType={type} tabs={EVENT_TAB_ITEMS}>
-          <Suspense fallback={<EventCardSkeleton />}>
-            <EventList
-              user={user}
-              workspace={workspace}
-              client={client}
-              type={type}
-              page={page}
-              date={date}
-              category={category}
-            />
-          </Suspense>
-        </EventTabs>
-      </div>
+      <Suspense fallback={<MagazineSkeleton />}>
+        <Magazine
+          workspace={workspace}
+          user={user}
+          client={client}
+          workspaceURI={workspaceURI}
+        />
+      </Suspense>
     </main>
   );
 }
 
-async function Categories({
+async function Magazine({
   workspace,
   user,
   client,
-  category,
+  workspaceURI,
 }: {
-  user?: User;
-  client: Client;
   workspace: PortalWorkspace | Cloned<PortalWorkspace>;
-  category: any[];
+  user: any;
+  client: any;
+  workspaceURI: string;
 }) {
-  const categories: any = await findEventCategories({
-    workspace,
-    client,
-    user,
-  }).then(clone);
+  const [activeResult, pastResult, categories]: [any, any, any] =
+    await Promise.all([
+      findEvents({
+        limit: MAGAZINE_LIMIT,
+        page: 1,
+        categoryids: [],
+        eventType: EVENT_TYPE.ACTIVE,
+        workspace,
+        client,
+        user,
+        orderBy: {eventStartDateTime: ORDER_BY.ASC},
+      }).then(clone),
+      findEvents({
+        limit: MAGAZINE_LIMIT,
+        page: 1,
+        categoryids: [],
+        eventType: EVENT_TYPE.PAST,
+        workspace,
+        client,
+        user,
+        orderBy: {eventStartDateTime: ORDER_BY.DESC},
+      }).then(clone),
+      findEventCategories({workspace, client, user}).then(clone),
+    ]);
+
+  const activeEvents: any[] = activeResult?.events ?? [];
+  const pastEvents: any[] = pastResult?.events ?? [];
+
+  const [
+    title,
+    upcomingDates,
+    upcomingDate,
+    pastCount,
+    registerNow,
+    daysLabel,
+    upcomingHeading,
+    emptyActive,
+    emptyPast,
+    seeLabel,
+    freeLabel,
+    calendarView,
+    filtersLabel,
+    activeTab,
+    pastTab,
+    featuredBadge,
+    replayBadge,
+    replayCta,
+    replayHeading,
+    replayLink,
+    categoryLabel,
+    clearAllLabel,
+  ] = await Promise.all([
+    t('Events & training'),
+    t('upcoming dates'),
+    t('upcoming date'),
+    t('past'),
+    t('Register now'),
+    t('days'),
+    t('Upcoming'),
+    t('No upcoming events'),
+    t('No past events'),
+    t('See'),
+    t('Free'),
+    t('Calendar view'),
+    t('Filters'),
+    t('Active events'),
+    t('Past events'),
+    t('Featured'),
+    t('Replay available'),
+    t('Watch replay'),
+    t('Other replays'),
+    t('Replay'),
+    t('Category'),
+    t('Clear all'),
+  ]);
+
+  const labels: MagazineHubLabels = {
+    title,
+    upcomingDates,
+    upcomingDate,
+    pastCount,
+    registerNow,
+    daysLabel,
+    upcomingHeading,
+    emptyActive,
+    emptyPast,
+    seeLabel,
+    freeLabel,
+    calendarView,
+    filtersLabel,
+    activeTab,
+    pastTab,
+    featuredBadge,
+    replayBadge,
+    replayCta,
+    replayHeading,
+    replayLink,
+    categoryLabel,
+    clearAllLabel,
+  };
 
   return (
-    <EventCategoryList categories={categories} selectedCategories={category} />
+    <MagazineHub
+      activeEvents={activeEvents}
+      pastEvents={pastEvents}
+      categories={categories ?? []}
+      workspaceURI={workspaceURI}
+      labels={labels}
+    />
   );
 }
 
-async function EventList({
-  user,
-  workspace,
-  client,
-  type,
-  page,
-  date,
-  category,
-}: {
-  date: string;
-  category: any[];
-  page: string | number;
-  user?: User;
-  workspace: PortalWorkspace | Cloned<PortalWorkspace>;
-  client: Client;
-  type: string;
-}) {
-  const {events, pageInfo}: any = await findEvents({
-    limit: LIMIT,
-    page: page,
-    categoryids: category,
-    day: new Date(date).getDate() || undefined,
-    month: new Date(date).getMonth() + 1 || undefined,
-    year: new Date(date).getFullYear() || undefined,
-    eventType: type,
-    workspace,
-    client,
-    user,
-    orderBy: {
-      eventStartDateTime:
-        type === EVENT_TYPE.ACTIVE ? ORDER_BY.ASC : ORDER_BY.DESC,
-    },
-  }).then(clone);
-
-  return <EventTabsContent pageInfo={pageInfo} events={events} />;
+function MagazineSkeleton() {
+  return (
+    <div className="py-8 container mx-auto max-w-[1280px]">
+      <div className="h-9 w-72 bg-ink-100 rounded mb-2 animate-pulse" />
+      <div className="h-4 w-96 bg-ink-100 rounded mb-6 animate-pulse" />
+      <div className="h-[380px] bg-ink-100 rounded-[20px] animate-pulse" />
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[18px]">
+        {[0, 1, 2, 3, 4, 5].map(i => (
+          <div
+            key={i}
+            className="h-[380px] bg-ink-100 rounded-2xl animate-pulse"
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
