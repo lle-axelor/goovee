@@ -336,6 +336,12 @@ export async function fetchFile({
       partnerCategorySet: {select: {id: true}},
       isDirectory: true,
       description: true,
+      parent: {
+        id: true,
+        fileName: true,
+        colorSelect: true,
+        parent: {id: true, fileName: true},
+      },
     },
   });
 
