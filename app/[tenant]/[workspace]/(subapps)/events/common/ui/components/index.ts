@@ -51,3 +51,4 @@ export type {EventsTabT2Key} from './tabs-t2';
 export {QRPlaceholder} from './qr-placeholder';
 export {MagazineHub} from './magazine-hub';
 export type {MagazineHubLabels} from './magazine-hub';
+export {RegistrationFormV2} from './registration-form-v2';
