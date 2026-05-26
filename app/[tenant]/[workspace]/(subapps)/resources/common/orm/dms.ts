@@ -342,6 +342,42 @@ export async function fetchFile({
   return file;
 }
 
+export async function fetchFolderWithParent({
+  id,
+  workspace,
+  user,
+  client,
+}: {
+  id: string;
+  workspace: PortalWorkspace | Cloned<PortalWorkspace>;
+  user?: User;
+  client: Client;
+}) {
+  if (!workspace) return null;
+
+  const folder = await client.aOSDMSFile.findOne({
+    where: {
+      id,
+      isDirectory: true,
+      workspaceSet: {id: workspace?.id},
+      AND: [
+        await filterPrivate({client, user}),
+        {OR: [{archived: false}, {archived: null}]},
+      ],
+    },
+    select: {
+      fileName: true,
+      description: true,
+      colorSelect: true,
+      logoSelect: true,
+      updatedOn: true,
+      parent: {fileName: true, id: true},
+    },
+  });
+
+  return folder;
+}
+
 export async function fetchColors() {
   return COLORS;
 }

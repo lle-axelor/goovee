@@ -13,3 +13,5 @@ export {DocsSidebar} from './docs-sidebar';
 export type {DocsSidebarCategory, DocsSidebarProps} from './docs-sidebar';
 export {DocsHomeView} from './docs-home-view';
 export type {DocsHomeViewLabels} from './docs-home-view';
+export {DocsFolderView} from './docs-folder-view';
+export type {DocsFolderViewLabels} from './docs-folder-view';
