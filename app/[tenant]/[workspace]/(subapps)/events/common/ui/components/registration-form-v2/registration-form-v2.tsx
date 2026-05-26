@@ -76,6 +76,7 @@ export function RegistrationFormV2({
     address: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (field: keyof FormState) => (
@@ -115,6 +116,7 @@ export function RegistrationFormV2({
     e.preventDefault();
     const next = validate();
     setErrors(next);
+    setSubmitError(null);
     if (Object.keys(next).length > 0) return;
 
     setSubmitting(true);
@@ -126,10 +128,9 @@ export function RegistrationFormV2({
         workspaceURL: workspace.url,
       });
       if (!validation.success) {
-        setErrors(prev => ({
-          ...prev,
-          emailAddress: i18n.t(validation.message),
-        }));
+        const msg = i18n.t(validation.message);
+        setErrors(prev => ({...prev, emailAddress: msg}));
+        setSubmitError(msg);
         setSubmitting(false);
         return;
       }
@@ -154,21 +155,22 @@ export function RegistrationFormV2({
           variant: 'success',
           title: i18n.t(SUCCESS_REGISTER_MESSAGE),
         });
+        router.refresh();
         router.push(
           `${workspaceURI}/${SUBAPP_CODES.events}/${eventDetails.slug}/${SUBAPP_PAGE.register}/${SUBAPP_PAGE.confirmation}`,
         );
       } else {
-        toast({
-          variant: 'destructive',
-          title: i18n.t(response.message),
-        });
+        const msg = i18n.t(response.message ?? 'Error while register to event');
+        console.error('[register] failed:', response);
+        setSubmitError(msg);
+        toast({variant: 'destructive', title: msg});
+        setSubmitting(false);
       }
-    } catch {
-      toast({
-        variant: 'destructive',
-        title: i18n.t('Error while register to event'),
-      });
-    } finally {
+    } catch (err) {
+      const msg = i18n.t('Error while register to event');
+      console.error('[register] threw:', err);
+      setSubmitError(msg);
+      toast({variant: 'destructive', title: msg});
       setSubmitting(false);
     }
   };
@@ -274,6 +276,15 @@ export function RegistrationFormV2({
           </div>
         </div>
       </SectionCard>
+
+      {/* Submit error banner */}
+      {submitError && (
+        <div
+          role="alert"
+          className="bg-status-rejected-bg border border-status-rejected-border rounded-xl px-4 py-3 text-[13px] text-status-rejected-fg font-semibold">
+          {submitError}
+        </div>
+      )}
 
       {/* CTA row */}
       <div className="flex justify-end gap-2.5 mt-2">

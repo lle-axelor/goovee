@@ -25,9 +25,11 @@ export function EventsTabsT2({
   className,
 }: EventsTabsT2Props) {
   const pathname = usePathname() ?? '';
-  const active: EventsTabT2Key = pathname.includes('/my-registrations')
-    ? 'mine'
-    : 'all';
+  const active: EventsTabT2Key =
+    pathname.includes('/my-registrations') ||
+    pathname.includes('/register/confirmation')
+      ? 'mine'
+      : 'all';
 
   const tabs = [
     {key: 'all' as const, label: allLabel, href: allHref, badge: undefined},
