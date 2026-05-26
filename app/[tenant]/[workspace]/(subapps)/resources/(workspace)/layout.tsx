@@ -9,10 +9,7 @@ import {manager} from '@/lib/core/tenant';
 import {t} from '@/locale/server';
 
 // ---- LOCAL IMPORTS ---- //
-import {
-  fetchExplorerCategories,
-  fetchNewFiles,
-} from '@/subapps/resources/common/orm/dms';
+import {fetchExplorerCategories} from '@/subapps/resources/common/orm/dms';
 import {
   DocsSidebar,
   type DocsSidebarCategory,
@@ -46,40 +43,32 @@ export default async function Layout({
 
   const [
     categoriesTree,
-    newFiles,
     searchPlaceholder,
     homeLabel,
-    recentLabel,
-    newLabel,
     categoriesLabel,
   ] = await Promise.all([
     fetchExplorerCategories({workspace, client, user}).then(clone),
-    fetchNewFiles({workspace, client, user, sinceDays: 14, take: 50}).then(
-      clone,
-    ),
     t('Search…'),
     t('Home'),
-    t('Recent'),
-    t('New'),
     t('Categories'),
   ]);
 
-  // Filter the flat hierarchy to top-level categories (parent === null)
-  // fetchExplorerCategories returns all folders with children attached
-  const topLevel = ((categoriesTree as any[]) ?? []).filter(
-    c => !c.parent || !c.parent.id,
+  // Build the visible tree roots: entries whose parent is null OR whose parent
+  // is not part of the fetched set (treat orphans as visible roots, since the
+  // parent may live outside the current workspace's DMS scope).
+  const allCats = (categoriesTree as any[]) ?? [];
+  const allIds = new Set(allCats.map(c => c.id));
+  const topLevel = allCats.filter(
+    c => !c.parent || !c.parent.id || !allIds.has(c.parent.id),
   ) as DocsSidebarCategory[];
 
   return (
     <div className="flex h-full min-h-[calc(100vh-4rem)] bg-ink-25">
       <DocsSidebar
         categories={topLevel}
-        newCount={(newFiles ?? []).length}
         workspaceURI={workspaceURI}
         searchPlaceholder={searchPlaceholder}
         homeLabel={homeLabel}
-        recentLabel={recentLabel}
-        newLabel={newLabel}
         categoriesLabel={categoriesLabel}
       />
       <main className="flex-1 min-w-0 overflow-y-auto">{children}</main>

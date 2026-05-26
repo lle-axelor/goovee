@@ -4,10 +4,7 @@ import {useMemo, useState} from 'react';
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import {
-  MdAutoAwesome,
   MdExpandMore,
-  MdFiberNew,
-  MdFolder,
   MdHomeFilled,
   MdSearch,
 } from 'react-icons/md';
@@ -26,23 +23,17 @@ export interface DocsSidebarCategory {
 
 export interface DocsSidebarProps {
   categories: DocsSidebarCategory[];
-  newCount: number;
   workspaceURI: string;
   searchPlaceholder: string;
   homeLabel: string;
-  recentLabel: string;
-  newLabel: string;
   categoriesLabel: string;
 }
 
 export function DocsSidebar({
   categories,
-  newCount,
   workspaceURI,
   searchPlaceholder,
   homeLabel,
-  recentLabel,
-  newLabel,
   categoriesLabel,
 }: DocsSidebarProps) {
   const pathname = usePathname() ?? '';
@@ -51,52 +42,67 @@ export function DocsSidebar({
 
   const [search, setSearch] = useState('');
 
-  // Initialize: expand the first top-level category, or any that contains the active folder
   const activeFolderId = useMemo(() => {
     const m = pathname.match(/\/resources\/folder\/([^/]+)/);
     return m?.[1] ?? null;
   }, [pathname]);
 
-  const findCategoryForFolder = (
-    list: DocsSidebarCategory[],
-    folderId: string | null,
-  ): string | null => {
-    if (!folderId) return null;
-    for (const c of list) {
-      if (c.id === folderId) return c.id;
-      if (c.children?.some(child => child.id === folderId)) return c.id;
-    }
-    return null;
-  };
-
-  const [openCats, setOpenCats] = useState<Record<string, boolean>>(() => {
+  // Walk the tree to find the active folder's ancestor chain (so we can
+  // auto-expand them on first render).
+  const initialOpen = useMemo(() => {
     const initial: Record<string, boolean> = {};
-    const activeParent = findCategoryForFolder(categories, activeFolderId);
-    if (activeParent) initial[activeParent] = true;
-    else if (categories[0]) initial[categories[0].id] = true;
+    if (activeFolderId) {
+      const ancestors: string[] = [];
+      const walk = (
+        nodes: DocsSidebarCategory[],
+        trail: string[],
+      ): boolean => {
+        for (const n of nodes) {
+          if (n.id === activeFolderId) {
+            ancestors.push(...trail);
+            return true;
+          }
+          if (n.children?.length) {
+            if (walk(n.children, [...trail, n.id])) return true;
+          }
+        }
+        return false;
+      };
+      walk(categories, []);
+      for (const id of ancestors) initial[id] = true;
+    } else if (categories[0]) {
+      initial[categories[0].id] = true;
+    }
     return initial;
-  });
+  }, [categories, activeFolderId]);
+
+  const [openCats, setOpenCats] = useState<Record<string, boolean>>(initialOpen);
 
   const toggleCat = (id: string) => {
     setOpenCats(prev => ({...prev, [id]: !prev[id]}));
   };
 
+  // Recursive name filter — keeps a node if it (or any descendant) matches.
   const filtered = useMemo(() => {
-    if (!search.trim()) return categories;
     const q = search.trim().toLowerCase();
-    return categories
-      .map(c => {
-        const childrenMatch =
-          c.children?.filter(s =>
-            s.fileName?.toLowerCase().includes(q),
-          ) ?? [];
-        const catMatch = c.fileName?.toLowerCase().includes(q);
-        if (catMatch) return c;
-        if (childrenMatch.length > 0) return {...c, children: childrenMatch};
-        return null;
-      })
-      .filter(Boolean) as DocsSidebarCategory[];
+    if (!q) return categories;
+    const filter = (
+      nodes: DocsSidebarCategory[],
+    ): DocsSidebarCategory[] => {
+      const out: DocsSidebarCategory[] = [];
+      for (const n of nodes) {
+        const childMatches = n.children ? filter(n.children) : [];
+        const selfMatch = n.fileName?.toLowerCase().includes(q);
+        if (selfMatch || childMatches.length > 0) {
+          out.push({...n, children: childMatches});
+        }
+      }
+      return out;
+    };
+    return filter(categories);
   }, [categories, search]);
+
+  const isSearching = !!search.trim();
 
   return (
     <aside className="w-[280px] shrink-0 bg-white border-r border-ink-100 flex flex-col">
@@ -134,25 +140,6 @@ export function DocsSidebar({
           />
           <span className="flex-1">{homeLabel}</span>
         </Link>
-
-        <Link
-          href={`${homeHref}#recents`}
-          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg mb-0.5 text-left text-[13px] font-medium text-ink-700 hover:bg-ink-25 transition-colors">
-          <MdAutoAwesome className="text-sm text-royal" />
-          <span className="flex-1">{recentLabel}</span>
-        </Link>
-
-        <Link
-          href={`${homeHref}#new`}
-          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg mb-0.5 text-left text-[13px] font-medium text-ink-700 hover:bg-ink-25 transition-colors">
-          <MdFiberNew className="text-sm text-mint-500" />
-          <span className="flex-1">{newLabel}</span>
-          {newCount > 0 && (
-            <span className="text-[11px] text-ink-500 font-semibold tabular-nums">
-              {newCount}
-            </span>
-          )}
-        </Link>
       </div>
 
       {/* Tree */}
@@ -160,66 +147,99 @@ export function DocsSidebar({
         <div className="text-[10.5px] font-extrabold tracking-[0.06em] uppercase text-ink-500 px-2 py-1.5">
           {categoriesLabel}
         </div>
-        {filtered.length === 0 ? (
-          <div className="px-2 py-3 text-[12px] text-ink-400">
-            {/* Silent empty state */}
-          </div>
-        ) : (
-          filtered.map(cat => {
-            const open = !!openCats[cat.id] || !!search.trim();
-            return (
-              <div key={cat.id}>
-                <button
-                  type="button"
-                  onClick={() => toggleCat(cat.id)}
-                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg mb-0.5 text-left text-[13px] font-semibold text-ink-800 hover:bg-ink-25 transition-colors">
-                  <MdExpandMore
-                    className={cn(
-                      'text-[12px] text-ink-400 transition-transform shrink-0',
-                      open ? '' : '-rotate-90',
-                    )}
-                  />
-                  <FolderIcon
-                    colorSelect={cat.colorSelect}
-                    size={22}
-                  />
-                  <span className="flex-1 min-w-0 truncate">
-                    {cat.fileName}
-                  </span>
-                </button>
-                {open && cat.children && cat.children.length > 0 && (
-                  <div className="ml-6 pl-2.5 border-l border-ink-100">
-                    {cat.children.map(sub => {
-                      const isActive = activeFolderId === sub.id;
-                      return (
-                        <Link
-                          key={sub.id}
-                          href={`${workspaceURI}/${SUBAPP_CODES.resources}/folder/${sub.id}`}
-                          className={cn(
-                            'flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[12.5px] transition-colors',
-                            isActive
-                              ? 'bg-royal-pale text-royal-dark font-semibold'
-                              : 'text-ink-700 font-medium hover:bg-ink-25',
-                          )}>
-                          <MdFolder
-                            className={cn(
-                              'text-[11px] shrink-0',
-                              isActive ? 'text-royal' : 'text-ink-400',
-                            )}
-                          />
-                          <span className="flex-1 min-w-0 truncate">
-                            {sub.fileName}
-                          </span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })
+        {filtered.length === 0 ? null : (
+          filtered.map(cat => (
+            <CategoryNode
+              key={cat.id}
+              node={cat}
+              depth={0}
+              activeFolderId={activeFolderId}
+              openCats={openCats}
+              toggleCat={toggleCat}
+              isSearching={isSearching}
+              workspaceURI={workspaceURI}
+            />
+          ))
         )}
       </div>
     </aside>
+  );
+}
+
+function CategoryNode({
+  node,
+  depth,
+  activeFolderId,
+  openCats,
+  toggleCat,
+  isSearching,
+  workspaceURI,
+}: {
+  node: DocsSidebarCategory;
+  depth: number;
+  activeFolderId: string | null;
+  openCats: Record<string, boolean>;
+  toggleCat: (id: string) => void;
+  isSearching: boolean;
+  workspaceURI: string;
+}) {
+  const hasChildren = (node.children?.length ?? 0) > 0;
+  const open = isSearching || !!openCats[node.id];
+  const isActive = activeFolderId === node.id;
+  const iconSize = depth === 0 ? 22 : 18;
+  const textSize = depth === 0 ? 'text-[13px]' : 'text-[12.5px]';
+
+  return (
+    <div>
+      <div
+        className={cn(
+          'flex items-center gap-1 rounded-lg mb-0.5 transition-colors',
+          isActive
+            ? 'bg-royal-pale text-royal-dark'
+            : 'text-ink-800 hover:bg-ink-25',
+        )}>
+        {hasChildren ? (
+          <button
+            type="button"
+            onClick={() => toggleCat(node.id)}
+            aria-label={open ? 'Collapse' : 'Expand'}
+            className="shrink-0 w-6 h-7 grid place-items-center rounded-md hover:bg-ink-50 transition-colors">
+            <MdExpandMore
+              className={cn(
+                'text-[12px] text-ink-400 transition-transform',
+                open ? '' : '-rotate-90',
+              )}
+            />
+          </button>
+        ) : (
+          <span className="shrink-0 w-6 h-7" aria-hidden />
+        )}
+        <Link
+          href={`${workspaceURI}/${SUBAPP_CODES.resources}/folder/${node.id}`}
+          className={cn(
+            'flex-1 min-w-0 flex items-center gap-2 px-1 py-1.5 font-semibold',
+            textSize,
+          )}>
+          <FolderIcon colorSelect={node.colorSelect} size={iconSize} />
+          <span className="flex-1 min-w-0 truncate">{node.fileName}</span>
+        </Link>
+      </div>
+      {open && hasChildren && (
+        <div className="ml-3 pl-3 border-l border-ink-100">
+          {node.children!.map(child => (
+            <CategoryNode
+              key={child.id}
+              node={child}
+              depth={depth + 1}
+              activeFolderId={activeFolderId}
+              openCats={openCats}
+              toggleCat={toggleCat}
+              isSearching={isSearching}
+              workspaceURI={workspaceURI}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

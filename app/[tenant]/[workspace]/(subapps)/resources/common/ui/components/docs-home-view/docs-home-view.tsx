@@ -13,8 +13,6 @@ import {cn} from '@/utils/css';
 import {DocFileIcon, FolderIcon} from '../doc-file-icon';
 
 export interface DocsHomeViewLabels {
-  greeting: string;
-  subtitle: string;
   pinnedTitle: string;
   pinnedSubtitle: string;
   pinnedEmptyTitle: string;
@@ -46,14 +44,6 @@ export function DocsHomeView({
 }) {
   return (
     <div className="px-6 md:px-9 py-8 max-w-[1280px] mx-auto">
-      {/* Greeting */}
-      <header className="mb-7">
-        <h1 className="text-[28px] font-extrabold text-ink-900 tracking-[-0.025em] leading-tight">
-          {labels.greeting}
-        </h1>
-        <p className="mt-1 text-sm text-ink-500">{labels.subtitle}</p>
-      </header>
-
       {/* Pinned folders */}
       <section className="mb-9">
         <header className="flex items-center gap-2 mb-4">

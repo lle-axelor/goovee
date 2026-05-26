@@ -15,12 +15,11 @@ import {manager} from '@/lib/core/tenant';
 import HTMLViewer from './html-viewer';
 import ImageViewer from './image-viewer';
 import PDFViewer from './pdf-viewer';
+import {NEW_FILE_CUTOFF_MS} from '@/subapps/resources/common/constants';
 import {
   DocsViewerShell,
   type DocsViewerShellLabels,
 } from '@/subapps/resources/common/ui/components';
-
-const NEW_CUTOFF_MS = 14 * 24 * 60 * 60 * 1000;
 
 function computeIsNew(createdOn: any, cutoffMs: number): boolean {
   if (!createdOn) return false;
@@ -86,13 +85,12 @@ export default async function Page(props: {
     ? `${workspaceURI}/${SUBAPP_CODES.resources}/folder/${parentId}`
     : `${workspaceURI}/${SUBAPP_CODES.resources}`;
 
-  // Download URL (existing route handler)
   const fileMetaId = (file as any)?.metaFile?.id ?? null;
   const downloadHref = fileMetaId
     ? `${workspaceURI}/${SUBAPP_CODES.resources}/api/file/${fileMetaId}`
     : null;
 
-  const isNew = computeIsNew((file as any).createdOn, NEW_CUTOFF_MS);
+  const isNew = computeIsNew((file as any).createdOn, NEW_FILE_CUTOFF_MS);
 
   return (
     <DocsViewerShell
@@ -112,8 +110,6 @@ async function buildLabels(): Promise<DocsViewerShellLabels> {
   const [
     backLabel,
     newBadge,
-    printLabel,
-    shareLabel,
     downloadLabel,
     detailsTitle,
     authorLabel,
@@ -122,17 +118,11 @@ async function buildLabels(): Promise<DocsViewerShellLabels> {
     formatLabel,
     sizeLabel,
     publishedLabel,
-    copyLinkLabel,
-    copiedLabel,
-    sendEmailLabel,
-    followUpdatesLabel,
     sameFolderTitle,
     sameFolderEmpty,
   ] = await Promise.all([
     t('Back'),
     t('New'),
-    t('Print'),
-    t('Share'),
     t('Download'),
     t('Details'),
     t('Author'),
@@ -141,10 +131,6 @@ async function buildLabels(): Promise<DocsViewerShellLabels> {
     t('Format'),
     t('Size'),
     t('Published on'),
-    t('Copy link'),
-    t('Copied!'),
-    t('Send by email'),
-    t('Follow updates'),
     t('In the same folder'),
     t('No other documents here yet.'),
   ]);
@@ -152,8 +138,6 @@ async function buildLabels(): Promise<DocsViewerShellLabels> {
   return {
     backLabel,
     newBadge,
-    printLabel,
-    shareLabel,
     downloadLabel,
     detailsTitle,
     authorLabel,
@@ -162,10 +146,6 @@ async function buildLabels(): Promise<DocsViewerShellLabels> {
     formatLabel,
     sizeLabel,
     publishedLabel,
-    copyLinkLabel,
-    copiedLabel,
-    sendEmailLabel,
-    followUpdatesLabel,
     sameFolderTitle,
     sameFolderEmpty,
   };

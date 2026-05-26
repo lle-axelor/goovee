@@ -10,6 +10,7 @@ import {manager} from '@/lib/core/tenant';
 import {t} from '@/locale/server';
 
 // ---- LOCAL IMPORTS ---- //
+import {NEW_FILE_CUTOFF_DAYS} from '@/subapps/resources/common/constants';
 import {
   fetchLatestFiles,
   fetchNewFiles,
@@ -68,8 +69,14 @@ async function HomeContent({
   const [pinnedFolders, recentFiles, newFiles, labels] = await Promise.all([
     fetchPinnedFoldersWithMeta({workspace, client, user}).then(clone),
     fetchLatestFiles({workspace, client, user, take: 5}).then(clone),
-    fetchNewFiles({workspace, client, user, sinceDays: 14, take: 5}).then(clone),
-    buildLabels(user),
+    fetchNewFiles({
+      workspace,
+      client,
+      user,
+      sinceDays: NEW_FILE_CUTOFF_DAYS,
+      take: 5,
+    }).then(clone),
+    buildLabels(),
   ]);
 
   return (
@@ -83,15 +90,8 @@ async function HomeContent({
   );
 }
 
-async function buildLabels(user: any): Promise<DocsHomeViewLabels> {
-  const firstName =
-    user?.firstName ??
-    user?.name?.split?.(' ')?.[0] ??
-    null;
-
+async function buildLabels(): Promise<DocsHomeViewLabels> {
   const [
-    greetingHello,
-    subtitle,
     pinnedTitle,
     pinnedSubtitle,
     pinnedEmptyTitle,
@@ -107,8 +107,6 @@ async function buildLabels(user: any): Promise<DocsHomeViewLabels> {
     newBadge,
     inFolder,
   ] = await Promise.all([
-    t('Hi'),
-    t('Browse your shared resources and recent updates.'),
     t('Featured folders'),
     t('Curated by your admin'),
     t('No pinned folders yet'),
@@ -116,7 +114,7 @@ async function buildLabels(user: any): Promise<DocsHomeViewLabels> {
     t('Recently viewed'),
     t('No recent activity'),
     t('What’s new'),
-    t('Documents added in the last 14 days'),
+    t('Documents added in the last 24 hours'),
     t('Nothing new to show'),
     t('documents'),
     t('document'),
@@ -125,13 +123,7 @@ async function buildLabels(user: any): Promise<DocsHomeViewLabels> {
     t('in'),
   ]);
 
-  const greeting = firstName
-    ? `${greetingHello} ${firstName} 👋`
-    : `${greetingHello} 👋`;
-
   return {
-    greeting,
-    subtitle,
     pinnedTitle,
     pinnedSubtitle,
     pinnedEmptyTitle,

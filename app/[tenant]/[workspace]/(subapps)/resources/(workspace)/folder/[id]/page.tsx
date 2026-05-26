@@ -13,12 +13,11 @@ import {
   fetchFiles,
   fetchFolderWithParent,
 } from '@/subapps/resources/common/orm/dms';
+import {NEW_FILE_CUTOFF_MS} from '@/subapps/resources/common/constants';
 import {
   DocsFolderView,
   type DocsFolderViewLabels,
 } from '@/subapps/resources/common/ui/components';
-
-const NEW_CUTOFF_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 
 export default async function Page(props: {
   params: Promise<{tenant: string; workspace: string; id: string}>;
@@ -97,7 +96,7 @@ async function buildLabels(): Promise<DocsFolderViewLabels> {
     columnDate,
     columnSize,
     newBadge,
-    newCutoffMs: NEW_CUTOFF_MS,
+    newCutoffMs: NEW_FILE_CUTOFF_MS,
     emptyTitle,
     emptySubtitle,
   };

@@ -3,6 +3,12 @@ export const ACTION = {
   UPLOAD: 'upload',
 };
 
+// "New" cutoff window — files created within this many milliseconds are
+// flagged as new in lists/grids and surfaced on the home page.
+export const NEW_FILE_CUTOFF_DAYS = 1;
+export const NEW_FILE_CUTOFF_MS =
+  NEW_FILE_CUTOFF_DAYS * 24 * 60 * 60 * 1000;
+
 export const COLORS = [
   {
     label: 'Red',

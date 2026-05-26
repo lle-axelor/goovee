@@ -1,17 +1,10 @@
 'use client';
 
-import {useCallback, useState} from 'react';
 import Link from 'next/link';
 import {
   MdArrowBack,
-  MdCheck,
   MdChevronRight,
-  MdContentCopy,
   MdDownload,
-  MdMail,
-  MdNotifications,
-  MdPrint,
-  MdShare,
 } from 'react-icons/md';
 
 import {SUBAPP_CODES} from '@/constants';
@@ -23,8 +16,6 @@ import {DocFileIcon} from '../doc-file-icon';
 export interface DocsViewerShellLabels {
   backLabel: string;
   newBadge: string;
-  printLabel: string;
-  shareLabel: string;
   downloadLabel: string;
   detailsTitle: string;
   authorLabel: string;
@@ -33,10 +24,6 @@ export interface DocsViewerShellLabels {
   formatLabel: string;
   sizeLabel: string;
   publishedLabel: string;
-  copyLinkLabel: string;
-  copiedLabel: string;
-  sendEmailLabel: string;
-  followUpdatesLabel: string;
   sameFolderTitle: string;
   sameFolderEmpty: string;
 }
@@ -85,10 +72,7 @@ export function DocsViewerShell({
           <section
             className="rounded-[14px] overflow-hidden border border-ink-200 shadow-soft-md min-w-0"
             style={{background: '#3a4a63'}}>
-            <ViewerToolbar
-              fileName={file.fileName}
-              downloadHref={downloadHref}
-            />
+            <ViewerToolbar fileName={file.fileName} />
             <div className="bg-white">{children}</div>
           </section>
 
@@ -103,7 +87,6 @@ export function DocsViewerShell({
               publishedOn={publishedOn}
               labels={labels}
             />
-            <QuickActionsCard labels={labels} downloadHref={downloadHref} />
             <SameFolderCard
               siblings={siblings}
               currentId={file.id}
@@ -176,20 +159,6 @@ function TopBar({
         </div>
 
         <div className="hidden md:flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            disabled
-            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md border border-ink-150 bg-white text-ink-700 text-sm font-medium hover:bg-ink-25 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
-            <MdPrint className="text-base" />
-            {labels.printLabel}
-          </button>
-          <button
-            type="button"
-            disabled
-            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-md border border-ink-150 bg-white text-ink-700 text-sm font-medium hover:bg-ink-25 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
-            <MdShare className="text-base" />
-            {labels.shareLabel}
-          </button>
           {downloadHref && (
             <a
               href={downloadHref}
@@ -198,7 +167,10 @@ function TopBar({
                 'inline-flex items-center gap-1.5 px-4 h-9 rounded-md bg-royal text-white text-sm font-bold',
                 'hover:bg-royal-dark transition-colors',
               )}
-              style={{boxShadow: '0 1px 2px rgba(21,84,181,0.3), 0 4px 10px rgba(21,84,181,0.18)'}}>
+              style={{
+                boxShadow:
+                  '0 1px 2px rgba(21,84,181,0.3), 0 4px 10px rgba(21,84,181,0.18)',
+              }}>
               <MdDownload className="text-base" />
               {labels.downloadLabel}
             </a>
@@ -209,29 +181,12 @@ function TopBar({
   );
 }
 
-function ViewerToolbar({
-  fileName,
-  downloadHref,
-}: {
-  fileName: string;
-  downloadHref: string | null;
-}) {
+function ViewerToolbar({fileName}: {fileName: string}) {
   return (
     <div
       className="flex items-center gap-3 px-4 py-2.5 text-white text-[12px]"
       style={{background: '#2d343f'}}>
       <span className="font-mono truncate">{fileName}</span>
-      <span className="ml-auto flex items-center gap-1.5">
-        {downloadHref && (
-          <a
-            href={downloadHref}
-            download
-            aria-label="Download"
-            className="w-7 h-7 rounded grid place-items-center text-white/85 hover:text-white hover:bg-white/[0.08] transition-colors">
-            <MdDownload className="text-sm" />
-          </a>
-        )}
-      </span>
     </div>
   );
 }
@@ -296,66 +251,6 @@ function Row({
         {value}
       </dd>
     </div>
-  );
-}
-
-function QuickActionsCard({
-  labels,
-  downloadHref,
-}: {
-  labels: DocsViewerShellLabels;
-  downloadHref: string | null;
-}) {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = useCallback(async () => {
-    if (typeof window === 'undefined') return;
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      // ignore — clipboard unavailable
-    }
-  }, []);
-
-  return (
-    <section className="bg-white rounded-2xl border border-ink-100 shadow-xs p-3.5 flex flex-col gap-2">
-      <button
-        type="button"
-        onClick={handleCopy}
-        className={cn(
-          'inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-[13px] font-semibold transition-colors',
-          copied
-            ? 'bg-mint-50 text-mint-700'
-            : 'bg-royal-pale text-royal-dark hover:bg-royal-border',
-        )}>
-        {copied ? (
-          <MdCheck className="text-base" />
-        ) : (
-          <MdContentCopy className="text-base" />
-        )}
-        {copied ? labels.copiedLabel : labels.copyLinkLabel}
-      </button>
-      <a
-        href={
-          downloadHref
-            ? `mailto:?subject=${encodeURIComponent('Document')}&body=${encodeURIComponent(
-                typeof window !== 'undefined' ? window.location.href : '',
-              )}`
-            : '#'
-        }
-        className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-[13px] font-semibold bg-royal-pale text-royal-dark hover:bg-royal-border transition-colors">
-        <MdMail className="text-base" />
-        {labels.sendEmailLabel}
-      </a>
-      <button
-        type="button"
-        disabled
-        className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-[13px] font-semibold bg-mint-50 text-mint-700 hover:bg-mint-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
-        <MdNotifications className="text-base" />
-        {labels.followUpdatesLabel}
-      </button>
-    </section>
   );
 }
 
