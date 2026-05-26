@@ -1,12 +1,8 @@
-export {ResourceList} from './resource-list';
-export {CategoryExplorer} from './category-explorer';
-export {SortBy} from './sort-by';
 export {
   CategoriesSkeleton,
   ResourceListSkeleton,
   ExplorerSkeleton,
 } from './skeleton';
-export {PostedBy} from './posted-by';
 export {DocFileIcon, FolderIcon, getFileVisual, getFolderToneClasses} from './doc-file-icon';
 export type {FileTone, FileVisual} from './doc-file-icon';
 export {DocsSidebar} from './docs-sidebar';
