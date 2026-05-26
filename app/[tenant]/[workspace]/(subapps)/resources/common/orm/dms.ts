@@ -76,6 +76,109 @@ export async function fetchLatestFolders({
   });
 }
 
+export async function fetchPinnedFoldersWithMeta({
+  workspace,
+  client,
+  user,
+}: {
+  workspace: PortalWorkspace | Cloned<PortalWorkspace>;
+  client: Client;
+  user?: User;
+}) {
+  if (!workspace) return [];
+
+  const folders = await client.aOSDMSFile.find({
+    where: {
+      isDirectory: true,
+      isHomepage: true,
+      workspaceSet: {id: workspace?.id},
+      AND: [
+        await filterPrivate({client, user}),
+        {OR: [{archived: false}, {archived: null}]},
+      ],
+    },
+    select: {
+      fileName: true,
+      parent: {id: true, fileName: true},
+      contentType: true,
+      description: true,
+      colorSelect: true,
+      logoSelect: true,
+      updatedOn: true,
+    },
+    orderBy: {updatedOn: 'DESC'} as any,
+    take: 12,
+  });
+
+  // For each folder, count its children files (cheap: one extra query per folder)
+  const result = await Promise.all(
+    folders.map(async folder => {
+      const itemCount = await client.aOSDMSFile.find({
+        where: {
+          isDirectory: {ne: true},
+          parent: {id: folder.id},
+          AND: [
+            await filterPrivate({client, user}),
+            {OR: [{archived: false}, {archived: null}]},
+          ],
+        },
+        select: {id: true},
+      });
+      return {...folder, itemCount: itemCount.length};
+    }),
+  );
+
+  return result;
+}
+
+export async function fetchNewFiles({
+  workspace,
+  client,
+  user,
+  sinceDays = 14,
+  take = 10,
+}: {
+  workspace: PortalWorkspace | Cloned<PortalWorkspace>;
+  client: Client;
+  user?: User;
+  sinceDays?: number;
+  take?: number;
+}) {
+  if (!workspace) return [];
+
+  const cutoff = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000);
+
+  const files = await client.aOSDMSFile.find({
+    where: {
+      isDirectory: {ne: true},
+      workspaceSet: {id: workspace?.id},
+      createdOn: {ge: cutoff},
+      AND: [
+        await filterPrivate({client, user}),
+        {OR: [{archived: false}, {archived: null}]},
+      ],
+    },
+    select: {
+      fileName: true,
+      parent: {fileName: true},
+      createdBy: {name: true, fullName: true},
+      createdOn: true,
+      metaFile: {
+        sizeText: true,
+        createdOn: true,
+        updatedOn: true,
+        fileName: true,
+        fileSize: true,
+        fileType: true,
+      },
+    },
+    orderBy: {createdOn: 'DESC'} as any,
+    take,
+  });
+
+  return files;
+}
+
 export async function fetchFiles({
   id,
   workspace,
