@@ -24,31 +24,58 @@ import {manager} from '@/tenant';
 import {HubPispApiError} from '@/lib/core/payment/hubpisp/utils';
 
 export async function POST(
-  _request: Request,
+  request: Request,
   {params}: {params: Promise<{resourceId: string}>},
 ) {
   const {resourceId} = await params;
 
-  let linkData: PaymentLinkStatusResult;
-
+  // The webhook delivers the full payment-link status JSON in the body, so we use it directly.
+  let linkData: PaymentLinkStatusResult | undefined;
   try {
-    linkData = await fetchPaymentLinkStatus(resourceId);
-  } catch (err) {
-    if (err instanceof HubPispApiError && err.status === 400) {
-      console.warn('[HUBPISP][WEBHOOK] Payment link not yet available', {
-        resourceId,
-        body: err.body,
-      });
-
-      // Do NOT fail webhook
-      return new NextResponse('OK', {status: 200});
+    const rawBody = await request.text();
+    if (rawBody) {
+      linkData = JSON.parse(rawBody) as PaymentLinkStatusResult;
     }
-
-    console.error('[HUBPISP][WEBHOOK] Failed to fetch payment link', {
+  } catch (err) {
+    console.warn('[HUBPISP][WEBHOOK] Failed to parse webhook body', {
       resourceId,
       error: (err as Error).message,
     });
-    return new NextResponse('Internal Server Error', {status: 500});
+  }
+
+  // Defensive fallback only: if the body is absent/unparseable (should not happen
+  // in normal operation), fetch the status once so we don't drop the notification.
+  if (!linkData?.consentStatus) {
+    console.warn(
+      '[HUBPISP][WEBHOOK] Webhook body missing status, falling back to GET payment-link',
+      {resourceId},
+    );
+    try {
+      linkData = await fetchPaymentLinkStatus(resourceId);
+    } catch (err) {
+      if (err instanceof HubPispApiError && err.status === 400) {
+        console.warn('[HUBPISP][WEBHOOK] Payment link not yet available', {
+          resourceId,
+          body: err.body,
+        });
+
+        // Do NOT fail webhook
+        return new NextResponse('OK', {status: 200});
+      }
+
+      console.error('[HUBPISP][WEBHOOK] Failed to fetch payment link', {
+        resourceId,
+        error: (err as Error).message,
+      });
+      return new NextResponse('Internal Server Error', {status: 500});
+    }
+  }
+
+  if (!linkData) {
+    console.error('[HUBPISP][WEBHOOK] No payment link status available', {
+      resourceId,
+    });
+    return new NextResponse('OK', {status: 200});
   }
 
   const endToEnd = linkData.paymentDetails?.endToEnd;
@@ -130,12 +157,15 @@ export async function POST(
   }
 
   // Persist paymentRequestResourceId so startup polling can resume it after a server restart.
-  await updatePaymentContextData({
+  const updatedContext = await updatePaymentContextData({
     id: paymentContext.id,
     version: paymentContext.version,
     client,
     context: {...paymentContext.data, paymentRequestResourceId},
   });
+
+  paymentContext.version = updatedContext.version;
+  paymentContext.data = {...paymentContext.data, paymentRequestResourceId};
 
   const localInstrument = paymentContext.data?.localInstrument as
     | HubPispLocalInstrument
