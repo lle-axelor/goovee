@@ -15,6 +15,8 @@ import {i18n} from '@/locale';
 import {useToast} from '@/ui/hooks';
 import {SUBAPP_CODES} from '@/constants';
 import type {PortalWorkspace} from '@/orm/workspace';
+import {useTrack} from '@/lib/analytics/use-track';
+import {computeTotal} from '@/utils/cart';
 
 // ---- LOCAL IMPORTS ---- //
 import {requestQuotation} from '@/app/[tenant]/[workspace]/(subapps)/shop/common/actions/cart';
@@ -33,6 +35,7 @@ export default function Content({
   const router = useRouter();
   const {workspaceURI} = useWorkspace();
   const {toast} = useToast();
+  const trackEvent = useTrack(SUBAPP_CODES.quotations);
 
   const invoicingAddress = cart?.invoicingAddress;
   const deliveryAddress = cart?.deliveryAddress;
@@ -52,6 +55,33 @@ export default function Content({
     }
 
     setRequestingQuotation(true);
+
+    const {total: cartTotal, currency: cartCurrency} = computeTotal({
+      cart,
+      workspace,
+    });
+    const trackedValue = Number.isFinite(Number(cartTotal))
+      ? Number(cartTotal)
+      : cart?.items?.reduce((sum: number, item: any) => {
+          const unitPrice = Number(
+            item.computedProduct?.price?.ati ??
+              item.computedProduct?.price?.wt ??
+              item.computedProduct?.product?.salePrice,
+          );
+          const qty = Number(item.quantity);
+          return Number.isFinite(unitPrice) && Number.isFinite(qty)
+            ? sum + unitPrice * qty
+            : sum;
+        }, 0);
+    const trackedCurrency =
+      cartCurrency?.code ||
+      cart?.items?.find((i: any) => i?.computedProduct?.currency?.code)
+        ?.computedProduct?.currency?.code;
+    trackEvent('request_quote', {
+      items_count: cart?.items?.length,
+      ...(Number.isFinite(trackedValue) ? {value: trackedValue} : {}),
+      ...(trackedCurrency ? {currency: trackedCurrency} : {}),
+    });
 
     const res = await requestQuotation({cart, workspace});
 

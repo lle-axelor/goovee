@@ -53,17 +53,13 @@ import {
   RELATED_NEWS,
   SUBSCRIBE,
 } from '@/subapps/news/common/constants';
-import {
-  Comments,
-  COMMENTS,
-  isCommentEnabled,
-  SORT_TYPE,
-} from '@/lib/core/comments';
+import {COMMENTS, isCommentEnabled, SORT_TYPE} from '@/lib/core/comments';
 import {
   createComment,
   fetchComments,
   findRecommendedNews,
 } from '@/subapps/news/common/actions/action';
+import {NewsComments} from '@/subapps/news/[[...segments]]/news-comments';
 import PaginationContent from '@/subapps/news/[[...segments]]/pagination-content';
 
 type BreadcrumbItem = {
@@ -636,8 +632,10 @@ export async function NewsInfoWrapper({
 
 export async function SocialMediaWrapper({
   workspace,
+  newsId,
 }: {
   workspace: PortalWorkspace | Cloned<PortalWorkspace>;
+  newsId?: string | number;
 }) {
   const enableSocialMediaSharing = workspace.config?.enableSocialMediaSharing;
   const availableSocials = workspace.config?.socialMediaSelect;
@@ -652,7 +650,7 @@ export async function SocialMediaWrapper({
     return null;
   }
 
-  return <SocialMedia availableSocials={availableSocials} />;
+  return <SocialMedia availableSocials={availableSocials} newsId={newsId} />;
 }
 
 export async function AttachmentListWrapper({
@@ -794,8 +792,9 @@ export async function CommentsWrapper({
           <div className="text-xl font-semibold">{title}</div>
         </div>
 
-        <Comments
+        <NewsComments
           recordId={news.id}
+          newsId={news.id}
           subapp={SUBAPP_CODES.news}
           disabled={isDisabled}
           inputPosition="bottom"

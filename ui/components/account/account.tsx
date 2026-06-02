@@ -24,6 +24,7 @@ import {
 } from '@/ui/components';
 import type {ID} from '@/types';
 import {getLoginURL} from '@/utils/url';
+import {trackAuth} from '@/lib/analytics/track-auth';
 
 export function Account({
   baseURL = '',
@@ -58,6 +59,11 @@ export function Account({
   const signOut = useSignOut();
 
   const handleLogout = async () => {
+    trackAuth('logout', {
+      workspace: baseURL,
+      tenant: tenant != null ? String(tenant) : null,
+      partnerId: session?.user?.id,
+    });
     await signOut();
     router.push(loginURL);
   };

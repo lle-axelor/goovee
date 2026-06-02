@@ -16,6 +16,7 @@ import {HeroSearch, Search} from '@/ui/components';
 import type {OverlayColor} from '@/types';
 import {PortalWorkspace} from '@/orm/workspace';
 import {useWorkspace} from '@/app/[tenant]/[workspace]/workspace-context';
+import {useTrack} from '@/lib/analytics/use-track';
 
 // ---- LOCAL IMPORTS ---- //
 import {SearchItem} from '@/subapps/news/common/ui/components';
@@ -35,6 +36,7 @@ export function Hero({
   const router = useRouter();
 
   const {workspaceURL, workspaceURI} = useWorkspace();
+  const trackEvent = useTrack(SUBAPP_CODES.news);
   const imageURL = workspace?.config?.newsHeroBgImage?.id
     ? `${workspaceURI}/${SUBAPP_CODES.news}/api/hero/background`
     : IMAGE_URL;
@@ -45,12 +47,26 @@ export function Hero({
     );
   };
 
+  const handleSearchKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    query: string,
+  ) => {
+    if (e.key === 'Enter' && query?.trim()) {
+      trackEvent('search', {
+        query,
+        results_count: null,
+        scope: 'news',
+      });
+    }
+  };
+
   const renderSearch = () => (
     <Search
       searchKey="title"
       findQuery={() => findNews({workspaceURL})}
       renderItem={SearchItem}
       onItemClick={handleClick}
+      onKeyDown={handleSearchKeyDown}
     />
   );
 

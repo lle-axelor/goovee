@@ -1,5 +1,7 @@
 // ---- CORE IMPORTS ---- //
 import {useWorkspace} from '@/app/[tenant]/[workspace]/workspace-context';
+import {SUBAPP_CODES} from '@/constants';
+import {useTrack} from '@/lib/analytics/use-track';
 import {i18n} from '@/locale';
 import {RichTextEditor} from '@/ui/components';
 import {Button} from '@/ui/components/button';
@@ -66,6 +68,7 @@ export function TicketForm(props: TicketFormProps) {
   const {workspaceURL, workspaceURI} = useWorkspace();
   const [success, setSuccess] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const trackEvent = useTrack(SUBAPP_CODES.ticketing);
 
   const allowedFields = useMemo(
     () => new Set(formFields?.map(f => f.name)),
@@ -152,9 +155,24 @@ export function TicketForm(props: TicketFormProps) {
         return;
       }
 
+      trackEvent('create_ticket', {
+        project_task_id: String(data.id),
+        category: value.category,
+        priority: value.priority,
+        has_parent: !!parentId,
+      });
+
       handleSuccess(data.id, projectId);
     },
-    [handleError, handleSuccess, projectId, workspaceURI, workspaceURL],
+    [
+      handleError,
+      handleSuccess,
+      projectId,
+      workspaceURI,
+      workspaceURL,
+      trackEvent,
+      parentId,
+    ],
   );
 
   const handleSubmitWithAction = useCallback(

@@ -5,8 +5,9 @@ import {Suspense} from 'react';
 import {FaChevronRight} from 'react-icons/fa';
 
 // ---- CORE IMPORTS ---- //
-import {Comments, isCommentEnabled, SORT_TYPE} from '@/comments';
+import {isCommentEnabled} from '@/comments';
 import {SUBAPP_CODES} from '@/constants';
+import TrackOnMount from '@/lib/analytics/track-on-mount';
 import {t} from '@/locale/server';
 import type {Client} from '@/goovee/.generated/client';
 import {
@@ -47,6 +48,7 @@ import type {
   ContactPartner,
   Priority,
 } from '../../../../common/types';
+import {TicketComments} from '../../../../common/ui/components/ticket-comments';
 import {TicketDetails} from '../../../../common/ui/components/ticket-details';
 import {TicketDetailsProvider} from '../../../../common/ui/components/ticket-details/ticket-details-provider';
 import {
@@ -109,6 +111,16 @@ export default async function Page(props: {
 
   return (
     <div className="container mt-5 mb-20">
+      <TrackOnMount
+        event="view_ticket"
+        subapp={SUBAPP_CODES.ticketing}
+        props={{
+          project_task_id: String(ticket.id),
+          status: ticket.status?.name,
+          priority: ticket.priority?.name,
+        }}
+        fireKey={String(ticket.id)}
+      />
       <Breadcrumb className="flex-shrink">
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -213,19 +225,8 @@ export default async function Page(props: {
           <h4 className="text-xl font-semibold border-b">
             {await t('Comments')}
           </h4>
-          <Comments
-            key={Math.random()}
-            recordId={ticket.id}
-            subapp={SUBAPP_CODES.ticketing}
-            sortBy={SORT_TYPE.new}
-            showCommentsByDefault
-            hideTopBorder
-            hideSortBy
-            hideCloseComments
-            hideCommentsHeader
-            showRepliesInMainThread
-            trackingField="publicBody"
-            commentField="note"
+          <TicketComments
+            ticketId={ticket.id}
             createComment={createComment}
             fetchComments={fetchComments}
             attachmentDownloadUrl={`${workspaceURI}/${SUBAPP_CODES.ticketing}/api/comments/attachments/${ticket.id}`}

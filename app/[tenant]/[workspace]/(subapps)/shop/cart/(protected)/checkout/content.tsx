@@ -319,6 +319,14 @@ export default function Content({
     [cart, computedProducts],
   );
 
+  const {total: cartTotal, currency: cartCurrency} = useMemo(
+    () =>
+      $cart?.items?.length
+        ? computeTotal({cart: $cart, workspace})
+        : {total: undefined, currency: undefined},
+    [$cart, workspace],
+  );
+
   if (loading) {
     return <p>{i18n.t('Loading')}...</p>;
   }
@@ -353,6 +361,10 @@ export default function Content({
                   <ShopPayments
                     workspace={workspace}
                     orderSubapp={orderSubapp}
+                    value={
+                      cartTotal !== undefined ? Number(cartTotal) : undefined
+                    }
+                    currency={cartCurrency?.code}
                   />
                 </>
               ) : null}

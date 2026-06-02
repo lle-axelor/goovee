@@ -7,6 +7,7 @@ import {IoArrowBackOutline} from 'react-icons/io5';
 // ---- CORE IMPORTS ---- //
 import {NO_IMAGE_URL, SUBAPP_CODES} from '@/constants';
 import {t, tattr} from '@/lib/core/locale/server';
+import TrackOnMount from '@/lib/analytics/track-on-mount';
 import {Avatar, AvatarImage, RichTextViewer} from '@/ui/components';
 import {clone} from '@/utils';
 import {getPartnerImageURL} from '@/utils/files';
@@ -18,6 +19,7 @@ import {findEntry, findMapConfig} from '../../common/orm';
 import type {Entry} from '../../common/types';
 import {Map} from '../../common/ui/components/map';
 import {ensureAuth} from '../../common/utils/auth-helper';
+import {ContactLink} from './contact-link';
 
 import '@/ui/components/rich-text-editor/rich-text-editor.css';
 export default async function Page(props: {
@@ -40,6 +42,12 @@ export default async function Page(props: {
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <TrackOnMount
+        event="view_directory_entry"
+        subapp={SUBAPP_CODES.directory}
+        props={{target_partner_id: String(entry.id)}}
+        fireKey={entry.id}
+      />
       <Link
         href={`${workspaceURI}/${SUBAPP_CODES.directory}`}
         className="mb-4 inline-flex items-center gap-2 text-primary hover:underline">
@@ -66,7 +74,12 @@ export default async function Page(props: {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {entry.mainPartnerContacts.map(contact => (
-              <Contact key={contact.id} tenant={tenant} contact={contact} />
+              <Contact
+                key={contact.id}
+                tenant={tenant}
+                contact={contact}
+                entryId={entry.id}
+              />
             ))}
           </div>
         </div>
@@ -83,6 +96,7 @@ async function Details({
   tenant: string;
 }) {
   const {
+    id: entryId,
     mainAddress,
     emailAddress,
     fixedPhone,
@@ -119,7 +133,9 @@ async function Details({
           )}
           <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
             {emailAddress && (
-              <Link
+              <ContactLink
+                entryId={entryId}
+                channel="email"
                 href={`mailto:${emailAddress.address}`}
                 className="text-sm text-primary hover:underline flex items-center gap-2">
                 <svg
@@ -136,10 +152,12 @@ async function Details({
                   />
                 </svg>
                 {emailAddress.address}
-              </Link>
+              </ContactLink>
             )}
             {fixedPhone && (
-              <Link
+              <ContactLink
+                entryId={entryId}
+                channel="phone"
                 href={`tel:${fixedPhone}`}
                 className="text-sm text-primary hover:underline flex items-center gap-2">
                 <svg
@@ -156,10 +174,12 @@ async function Details({
                   />
                 </svg>
                 {fixedPhone}
-              </Link>
+              </ContactLink>
             )}
             {mobilePhone && (
-              <Link
+              <ContactLink
+                entryId={entryId}
+                channel="phone"
                 href={`tel:${mobilePhone}`}
                 className="text-sm text-primary hover:underline flex items-center gap-2">
                 <svg
@@ -176,7 +196,7 @@ async function Details({
                   />
                 </svg>
                 {mobilePhone}
-              </Link>
+              </ContactLink>
             )}
             {webSite && (
               <Link
@@ -216,9 +236,11 @@ async function Details({
 async function Contact({
   tenant,
   contact,
+  entryId,
 }: {
   tenant: string;
   contact: NonNullable<Entry['mainPartnerContacts']>[number];
+  entryId: Entry['id'];
 }) {
   const {
     emailAddress,
@@ -274,11 +296,13 @@ async function Contact({
                   d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                 />
               </svg>
-              <Link
+              <ContactLink
+                entryId={entryId}
+                channel="email"
                 href={`mailto:${emailAddress.address}`}
                 className="text-primary hover:underline">
                 {emailAddress.address}
-              </Link>
+              </ContactLink>
             </div>
           )}
           {fixedPhone && (
@@ -296,11 +320,13 @@ async function Contact({
                   d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                 />
               </svg>
-              <Link
+              <ContactLink
+                entryId={entryId}
+                channel="phone"
                 href={`tel:${fixedPhone}`}
                 className="text-primary hover:underline">
                 {fixedPhone}
-              </Link>
+              </ContactLink>
             </div>
           )}
           {mobilePhone && (
@@ -318,11 +344,13 @@ async function Contact({
                   d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
                 />
               </svg>
-              <Link
+              <ContactLink
+                entryId={entryId}
+                channel="phone"
                 href={`tel:${mobilePhone}`}
                 className="text-primary hover:underline">
                 {mobilePhone}
-              </Link>
+              </ContactLink>
             </div>
           )}
         </div>

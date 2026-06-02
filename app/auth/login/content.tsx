@@ -21,6 +21,7 @@ import {useToast} from '@/ui/hooks';
 // ---- LOCAL IMPORTS ---- //
 import {useEnvironment} from '@/lib/core/environment';
 import {isSameOrigin} from '@/utils/url';
+import {trackAuth} from '@/lib/analytics/track-auth';
 
 export default function Content({
   canRegister,
@@ -87,8 +88,27 @@ export default function Content({
     });
 
     if (!login.error) {
+      const sess = await authClient.getSession();
+      trackAuth('login', {
+        workspace: workspaceURI,
+        tenant: tenantId,
+        partnerId: sess?.data?.user?.id,
+        provider: 'credentials',
+        locale: l10n.getLocale(),
+      });
       window.location.href = redirection;
     } else {
+      const reason =
+        typeof login.error === 'string'
+          ? login.error
+          : ((login.error as any)?.code ?? (login.error as any)?.message);
+      trackAuth('login_failed', {
+        workspace: workspaceURI,
+        tenant: tenantId,
+        provider: 'credentials',
+        locale: l10n.getLocale(),
+        reason: typeof reason === 'string' ? reason : undefined,
+      });
       console.error(login.error);
       toast({
         title: login.error.message
@@ -108,6 +128,12 @@ export default function Content({
       });
       return;
     }
+    trackAuth('login_initiated', {
+      workspace: workspaceURI,
+      tenant: tenantId,
+      provider: 'google',
+      locale: l10n.getLocale(),
+    });
     await authClient.signIn.social({
       provider: 'google',
       callbackURL: redirection,
@@ -126,6 +152,12 @@ export default function Content({
       });
       return;
     }
+    trackAuth('login_initiated', {
+      workspace: workspaceURI,
+      tenant: tenantId,
+      provider: 'keycloak',
+      locale: l10n.getLocale(),
+    });
     await authClient.signIn.oauth2({
       providerId: 'keycloak',
       callbackURL: redirection,

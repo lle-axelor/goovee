@@ -1,0 +1,41 @@
+{
+  "name": "AOSPortalAnalyticsScriptTemplate",
+  "table": "portal_portal_analytics_script_template",
+  "synchronize": false,
+  "fields": [
+    {
+      "type": "String",
+      "name": "name"
+    },
+    {
+      "type": "String",
+      "name": "description"
+    },
+    {
+      "type": "String",
+      "name": "code"
+    },
+    {
+      "type": "String",
+      "name": "placement"
+    },
+    {
+      "type": "String",
+      "name": "loadStrategy"
+    },
+    {
+      "type": "String",
+      "name": "documentationUrl"
+    },
+    {
+      "type": "Boolean",
+      "name": "isActive"
+    },
+    {
+      "type": "OneToMany",
+      "name": "parameterList",
+      "target": "AOSPortalAnalyticsScriptParameter",
+      "mappedBy": "template"
+    }
+  ]
+}

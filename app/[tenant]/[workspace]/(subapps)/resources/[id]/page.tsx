@@ -10,6 +10,8 @@ import {clone} from '@/utils';
 import {workspacePathname} from '@/utils/workspace';
 import {findWorkspace} from '@/orm/workspace';
 import {manager} from '@/lib/core/tenant';
+import TrackOnMount from '@/lib/analytics/track-on-mount';
+import {SUBAPP_CODES} from '@/constants';
 
 // ---- LOCAL IMPORTS ---- //
 import DownloadIcon from './download-icon';
@@ -79,6 +81,16 @@ export default async function Page(props: {
 
   return (
     <main className="container p-4 mx-auto space-y-6 h-full bg-white rounded-lg flex flex-col gap-6 overflow-hidden">
+      <TrackOnMount
+        event="view_resource"
+        subapp={SUBAPP_CODES.resources}
+        props={{
+          file_id: String(file.id),
+          file_name: file.fileName,
+          file_type: file?.metaFile?.fileType || file?.contentType,
+        }}
+        fireKey={file.id}
+      />
       <div className="border-b flex flex-col gap-4 pb-4 w-full">
         <div className="flex gap-4">
           <div className="grow flex flex-col">

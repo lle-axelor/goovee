@@ -54,6 +54,7 @@ import {
   ImageUploader,
 } from '@/subapps/forum/common/ui/components';
 import {Group} from '@/subapps/forum/common/types/forum';
+import {useTrack} from '@/lib/analytics/use-track';
 
 interface FileDetails {
   file?: File;
@@ -95,6 +96,7 @@ export const CreatePost = ({
   const {workspaceURI, workspaceURL} = useWorkspace();
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const trackEvent = useTrack(SUBAPP_CODES.forum);
 
   const formSchema = z.object({
     title: z.string().min(1, {message: i18n.t('Title is required')}),
@@ -167,6 +169,11 @@ export const CreatePost = ({
       });
 
       if (result.success) {
+        trackEvent('create_forum_post', {
+          forum_group_id: String(groupID),
+          title_length: values.title.length,
+          body_length: editorContent.length,
+        });
         toast({
           variant: 'success',
           title: i18n.t('Post added successfully.'),

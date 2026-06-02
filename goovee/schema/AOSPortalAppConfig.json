@@ -106,6 +106,12 @@
       "mappedBy": "portalAppConfig"
     },
     {
+      "type": "OneToMany",
+      "name": "analyticsScriptInstanceList",
+      "target": "AOSPortalAnalyticsScriptInstance",
+      "mappedBy": "portalAppConfig"
+    },
+    {
       "type": "String",
       "name": "ticketHeroTitle"
     },

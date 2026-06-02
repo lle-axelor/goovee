@@ -16,6 +16,7 @@ import Content from './content';
 import {findQuotation} from '@/subapps/quotations/common/orm/quotations';
 import {QuotationSkeleton} from '@/subapps/quotations/common/ui/components';
 import type {QuotationDetail} from '@/subapps/quotations/common/types/quotations';
+import TrackOnMount from '@/lib/analytics/track-on-mount';
 
 type PageProps = {
   params: Promise<{
@@ -89,12 +90,28 @@ async function Quotation({params: paramsProm}: PageProps) {
     client,
   });
 
+  const trackedValue = Number(quotation.exTaxTotal ?? quotation.inTaxTotal);
+
   return (
-    <Content
-      quotation={clone(quotation) as QuotationDetail}
-      workspace={workspace}
-      orderSubapp={Boolean(orderSubapp)}
-    />
+    <>
+      <TrackOnMount
+        event="view_quotation"
+        subapp={SUBAPP_CODES.quotations}
+        props={{
+          sale_order_id: String(quotation.id),
+          ...(Number.isFinite(trackedValue) ? {value: trackedValue} : {}),
+          ...(quotation.currency?.code
+            ? {currency: quotation.currency.code}
+            : {}),
+        }}
+        fireKey={quotation.id}
+      />
+      <Content
+        quotation={clone(quotation) as QuotationDetail}
+        workspace={workspace}
+        orderSubapp={Boolean(orderSubapp)}
+      />
+    </>
   );
 }
 

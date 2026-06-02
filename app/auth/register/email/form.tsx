@@ -47,6 +47,7 @@ import {InnerHTML} from '@/ui/components/inner-html';
 import {subscribe} from '../actions';
 import {WorkspaceForRegistration} from '@/orm/workspace';
 import {PasswordSchema} from '@/utils/validators';
+import {trackAuth} from '@/lib/analytics/track-auth';
 
 const formSchema = z
   .object({
@@ -193,6 +194,12 @@ export default function SignUp({
       });
 
       if (!res.error) {
+        trackAuth('register', {
+          workspace: workspace?.url,
+          tenant: tenantId,
+          provider: 'credentials',
+          locale: l10n.getLocale(),
+        });
         toast({
           variant: 'success',
           title: i18n.t('Registered successfully'),

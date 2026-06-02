@@ -1,0 +1,31 @@
+{
+  "name": "AOSPortalAnalyticsScriptInstance",
+  "table": "portal_portal_analytics_script_instance",
+  "synchronize": false,
+  "fields": [
+    {
+      "type": "ManyToOne",
+      "name": "template",
+      "target": "AOSPortalAnalyticsScriptTemplate"
+    },
+    {
+      "type": "ManyToOne",
+      "name": "portalAppConfig",
+      "target": "AOSPortalAppConfig"
+    },
+    {
+      "type": "Boolean",
+      "name": "isActive"
+    },
+    {
+      "type": "Int",
+      "name": "sequence"
+    },
+    {
+      "type": "OneToMany",
+      "name": "valueList",
+      "target": "AOSPortalAnalyticsScriptValue",
+      "mappedBy": "instance"
+    }
+  ]
+}

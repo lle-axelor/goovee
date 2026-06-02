@@ -14,6 +14,7 @@ import {SUBAPP_CODES, SUBAPP_PAGE} from '@/constants';
 import {useWorkspace} from '@/app/[tenant]/[workspace]/workspace-context';
 import {Payments} from '@/ui/components/payment';
 import {scale} from '@/utils';
+import {useTrack} from '@/lib/analytics/use-track';
 
 // ---- LOCAL IMPORTS ---- //
 import {register} from '@/subapps/events/common/actions/actions';
@@ -27,8 +28,6 @@ import {getCalculatedTotalPrice} from '@/subapps/events/common/utils/payments';
 import type {FullEvent} from '../../../orm/event';
 import type {ModelField} from '@/orm/model-fields';
 import {URL_PARAMS} from '@/subapps/events/common/constants';
-import type {SuccessResponse} from '@/types/action';
-import type {Registration} from '@/subapps/events/common/types';
 export function EventPayments({
   workspace,
   event,
@@ -55,15 +54,35 @@ export function EventPayments({
   const {toast} = useToast();
   const router = useRouter();
   const {workspaceURI} = useWorkspace();
+  const trackEvent = useTrack(SUBAPP_CODES.events);
 
   const redirectToEvents = useCallback(
-    async (result: SuccessResponse<Registration>) => {
-      if (!result.data.event?.slug) return;
-      router.replace(
-        `${workspaceURI}/${SUBAPP_CODES.events}/${result.data.event.slug}/${SUBAPP_PAGE.register}/${SUBAPP_PAGE.confirmation}?${URL_PARAMS.isPaid}=true`,
-      );
+    async (result: any) => {
+      if (result) {
+        const {data} = result;
+        const participantList = data?.registration?.participantList;
+        const totalAti = data?.registration?.totalAti;
+        const currencyCode =
+          data?.registration?.event?.currency?.code ??
+          data?.currency ??
+          undefined;
+        trackEvent('register_event_completed', {
+          portal_event_id: String(data?.event?.id ?? event.id),
+          attendee_count: Array.isArray(participantList)
+            ? participantList.length
+            : undefined,
+          ...(Number.isFinite(Number(totalAti)) && Number(totalAti) > 0
+            ? {value: Number(totalAti)}
+            : {}),
+          ...(currencyCode ? {currency: currencyCode} : {}),
+          success: true,
+        });
+        router.replace(
+          `${workspaceURI}/${SUBAPP_CODES.events}/${data.event.slug}/${SUBAPP_PAGE.register}/${SUBAPP_PAGE.confirmation}?${URL_PARAMS.isPaid}=true`,
+        );
+      }
     },
-    [workspaceURI, router],
+    [workspaceURI, router, trackEvent, event.id],
   );
 
   function getMappedParticipants(

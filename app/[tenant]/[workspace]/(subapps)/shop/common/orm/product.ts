@@ -105,6 +105,7 @@ const getProductFields = ({
     inAti: true,
     description: true,
     saleCurrency: {
+      code: true,
       symbol: true,
     },
     ...(shouldHidePrices ? {} : {salePrice: true}),

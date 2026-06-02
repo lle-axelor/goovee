@@ -6,6 +6,8 @@ import {memo, useEffect, useMemo, useState} from 'react';
 // ---- CORE IMPORTS ---- //
 import {i18n} from '@/locale';
 import {DocViewer, Separator} from '@/ui/components';
+import {useTrack} from '@/lib/analytics/use-track';
+import {SUBAPP_CODES} from '@/constants';
 
 // ---- LOCAL IMPORTS ---- //
 import {InvoiceProps} from '@/subapps/invoices/common/types/invoices';
@@ -13,6 +15,7 @@ import type {IDocument} from '@cyntler/react-doc-viewer';
 
 export const Invoice = memo(({invoiceId, downloadURL}: InvoiceProps) => {
   const [docFile, setDocFile] = useState<IDocument | null>(null);
+  const trackEvent = useTrack(SUBAPP_CODES.invoices);
 
   useEffect(() => {
     let flag = true;
@@ -41,6 +44,9 @@ export const Invoice = memo(({invoiceId, downloadURL}: InvoiceProps) => {
             fileType: 'pdf',
             fileName,
           });
+          trackEvent('download_invoice_pdf', {
+            invoice_id: String(invoiceId),
+          });
         }
       } catch (error) {
         console.error('Error loading invoice file:', error);
@@ -55,7 +61,7 @@ export const Invoice = memo(({invoiceId, downloadURL}: InvoiceProps) => {
         URL.revokeObjectURL(blobURL);
       }
     };
-  }, [invoiceId, downloadURL]);
+  }, [invoiceId, downloadURL, trackEvent]);
 
   const documents = useMemo(() => {
     if (!docFile) return [];

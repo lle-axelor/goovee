@@ -293,6 +293,8 @@ export async function findOrder({
     ...order,
     statusSelect: order.statusSelect!,
     deliveryState: order.deliveryState!,
+    rawExTaxTotal: Number(exTaxTotal ?? 0),
+    rawInTaxTotal: Number(inTaxTotal ?? 0),
     exTaxTotal: await formatNumber(String(exTaxTotal ?? 0), {
       scale,
       currency: currencySymbol,

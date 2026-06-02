@@ -7,6 +7,8 @@ import {clone} from '@/utils';
 import {workspacePathname} from '@/utils/workspace';
 import {findWorkspace} from '@/orm/workspace';
 import {getSession} from '@/auth';
+import TrackOnMount from '@/lib/analytics/track-on-mount';
+import {SUBAPP_CODES} from '@/constants';
 
 // ---- LOCAL IMPORTS ---- //
 import {EventDetails} from '@/subapps/events/common/ui/components';
@@ -48,5 +50,19 @@ export default async function Page(props: {
     return notFound();
   }
 
-  return <EventDetails eventDetails={eventDetails} workspace={workspace} />;
+  return (
+    <>
+      <TrackOnMount
+        event="view_event"
+        subapp={SUBAPP_CODES.events}
+        props={{
+          portal_event_id: String(eventDetails.id),
+          event_slug: eventDetails.slug,
+          event_status: eventDetails.statusSelect ?? 'upcoming',
+        }}
+        fireKey={eventDetails.id}
+      />
+      <EventDetails eventDetails={eventDetails} workspace={workspace} />
+    </>
+  );
 }

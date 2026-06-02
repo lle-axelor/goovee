@@ -1,0 +1,21 @@
+{
+  "name": "AOSPortalAnalyticsScriptValue",
+  "table": "portal_portal_analytics_script_value",
+  "synchronize": false,
+  "fields": [
+    {
+      "type": "ManyToOne",
+      "name": "instance",
+      "target": "AOSPortalAnalyticsScriptInstance"
+    },
+    {
+      "type": "ManyToOne",
+      "name": "parameter",
+      "target": "AOSPortalAnalyticsScriptParameter"
+    },
+    {
+      "type": "String",
+      "name": "value"
+    }
+  ]
+}

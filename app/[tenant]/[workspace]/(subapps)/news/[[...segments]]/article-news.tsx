@@ -9,6 +9,7 @@ import type {PortalWorkspace} from '@/orm/workspace';
 import type {Cloned} from '@/types/util';
 import type {User} from '@/types';
 import {CommentsSkeleton} from '@/lib/core/comments';
+import TrackOnMount from '@/lib/analytics/track-on-mount';
 
 // ---- LOCAL IMPORTS ---- //
 import {
@@ -85,6 +86,16 @@ export async function ArticleNews({
 
   return (
     <div className={`container mx-auto grid grid-cols-1 gap-6 mt-6`}>
+      <TrackOnMount
+        event="view_news"
+        subapp={SUBAPP_CODES.news}
+        props={{
+          news_id: String(newsObject.id),
+          news_slug: newsObject.slug,
+          category_ids: categoryIds,
+        }}
+        fireKey={newsObject.id}
+      />
       {!directRoute && (
         <Suspense fallback={<BreadcrumbsSkeleton />}>
           <div className="py-4">
@@ -110,7 +121,7 @@ export async function ArticleNews({
         <div className="w-full flex flex-col gap-6">
           {/* SocialMedia Section */}
           <Suspense fallback={<SocialMediaSkeleton />}>
-            <SocialMediaWrapper workspace={workspace} />
+            <SocialMediaWrapper workspace={workspace} newsId={newsObject.id} />
           </Suspense>
 
           {/* Attachments Section */}

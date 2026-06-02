@@ -1,0 +1,36 @@
+{
+  "name": "AOSPortalAnalyticsScriptParameter",
+  "table": "portal_portal_analytics_script_parameter",
+  "synchronize": false,
+  "fields": [
+    {
+      "type": "String",
+      "name": "placeholderKey"
+    },
+    {
+      "type": "String",
+      "name": "label"
+    },
+    {
+      "type": "String",
+      "name": "placeholder"
+    },
+    {
+      "type": "String",
+      "name": "helpText"
+    },
+    {
+      "type": "Boolean",
+      "name": "isRequired"
+    },
+    {
+      "type": "Int",
+      "name": "sequence"
+    },
+    {
+      "type": "ManyToOne",
+      "name": "template",
+      "target": "AOSPortalAnalyticsScriptTemplate"
+    }
+  ]
+}

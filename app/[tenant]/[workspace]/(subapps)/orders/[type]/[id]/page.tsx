@@ -17,6 +17,7 @@ import {findOrder} from '@/subapps/orders/common/orm/orders';
 import {ORDER} from '@/subapps/orders/common/constants/orders';
 import {OrderSkeleton} from '@/subapps/orders/common/ui/components';
 import {OrderType} from '@/subapps/orders/common/types/orders';
+import TrackOnMount from '@/lib/analytics/track-on-mount';
 
 async function Order({
   params,
@@ -89,7 +90,23 @@ async function Order({
     return notFound();
   }
 
-  return <Content order={clone(order)} orderType={type} />;
+  const trackedValue = order.rawExTaxTotal ?? order.rawInTaxTotal;
+
+  return (
+    <>
+      <TrackOnMount
+        event="view_order"
+        subapp={SUBAPP_CODES.orders}
+        props={{
+          sale_order_id: String(order.id),
+          ...(Number.isFinite(trackedValue) ? {value: trackedValue} : {}),
+          ...(order.currency?.code ? {currency: order.currency.code} : {}),
+        }}
+        fireKey={order.id}
+      />
+      <Content order={clone(order)} orderType={type} />
+    </>
+  );
 }
 
 export default async function Page(props: {

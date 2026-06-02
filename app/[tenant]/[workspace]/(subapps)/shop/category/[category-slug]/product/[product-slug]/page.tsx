@@ -25,6 +25,8 @@ import {
 } from '@/subapps/shop/common/constants';
 import {transformMetaFields} from '@/subapps/shop/common/utils/meta-field-value';
 import type {Breadcrumb} from '@/subapps/shop/common/types';
+import TrackOnMount from '@/lib/analytics/track-on-mount';
+import {SUBAPP_CODES} from '@/constants';
 
 export async function generateMetadata(props: {
   params: Promise<{
@@ -199,15 +201,36 @@ async function Product({
     client,
   });
 
+  const unitPrice = Number(
+    computedProduct?.price?.ati ??
+      computedProduct?.price?.wt ??
+      computedProduct?.product?.salePrice,
+  );
+
   return (
-    <ProductView
-      hidePriceAndPurchase={hidePriceAndPurchase}
-      product={clone(computedProduct)}
-      workspace={workspace}
-      breadcrumbs={breadcrumbs}
-      categories={parentcategories}
-      metaFields={metaFieldsValues}
-    />
+    <>
+      <TrackOnMount
+        event="view_item"
+        subapp={SUBAPP_CODES.shop}
+        props={{
+          product_id: String(product.id),
+          product_name: product.name,
+          category_id: String($category.id),
+          category_name: $category.name,
+          value: Number.isFinite(unitPrice) ? unitPrice : undefined,
+          currency: computedProduct?.currency?.code,
+        }}
+        fireKey={product.id}
+      />
+      <ProductView
+        hidePriceAndPurchase={hidePriceAndPurchase}
+        product={clone(computedProduct)}
+        workspace={workspace}
+        breadcrumbs={breadcrumbs}
+        categories={parentcategories}
+        metaFields={metaFieldsValues}
+      />
+    </>
   );
 }
 

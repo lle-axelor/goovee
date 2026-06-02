@@ -10,6 +10,8 @@ import {
 import type {PostWithMembership} from '@/subapps/forum/common/types/forum';
 import {Skeleton} from '@/ui/components';
 import {PortalWorkspace} from '@/orm/workspace';
+import TrackOnMount from '@/lib/analytics/track-on-mount';
+import {SUBAPP_CODES} from '@/constants';
 
 interface ThreadProps {
   post?: PostWithMembership;
@@ -61,6 +63,19 @@ export const Thread = ({
     <div
       id={`post-${post?.id}`}
       className="bg-white rounded-lg flex flex-col gap-4 pt-4 pb-0 rounded-t-lg">
+      {post?.id && (
+        <TrackOnMount
+          event="view_forum_post"
+          subapp={SUBAPP_CODES.forum}
+          props={{
+            forum_post_id: String(post.id),
+            ...(forumGroup?.id !== undefined && {
+              forum_group_id: String(forumGroup.id),
+            }),
+          }}
+          fireKey={post.id}
+        />
+      )}
       {showHeader && <ThreadHeader group={forumGroup} />}
       <ThreadBody
         post={post}

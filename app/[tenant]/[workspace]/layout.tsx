@@ -19,6 +19,8 @@ import Header from './header';
 import Sidebar from './sidebar';
 import MobileMenu from './mobile-menu';
 import Footer from './footer';
+import AnalyticsScripts from './analytics-scripts';
+import PageViewTracker from '@/lib/analytics/page-view-tracker';
 import {shouldHidePricesAndPurchase} from '@/orm/product';
 
 const defaultTheme = {
@@ -178,6 +180,10 @@ export default async function Layout(props: {
             showCart={showCart}
           />
         </div>
+        <AnalyticsScripts
+          instances={$workspace?.config?.analyticsScriptInstanceList ?? []}
+        />
+        <PageViewTracker />
       </CartContext>
     </Workspace>
   );

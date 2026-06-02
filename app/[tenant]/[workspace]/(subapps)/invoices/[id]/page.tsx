@@ -17,6 +17,7 @@ import {SignOutBanner} from './sign-out-banner';
 import {TokenInvalid} from './token-invalid';
 import {findInvoice} from '@/subapps/invoices/common/orm/invoices';
 import {InvoiceSkeleton} from '@/subapps/invoices/common/ui/components';
+import TrackOnMount from '@/lib/analytics/track-on-mount';
 
 type Params = {id: string; tenant: string; workspace: string};
 type SearchParams = {[key: string]: string | undefined};
@@ -95,13 +96,37 @@ async function Invoice({
     return notFound();
   }
 
+  const inTaxTotalNum = Number(invoice.inTaxTotal);
+  const amountRemainingNum = Number(
+    (invoice as any)?.amountRemaining?.value ??
+      (invoice as any)?.amountRemaining,
+  );
+  const analyticsValue = Number.isFinite(inTaxTotalNum)
+    ? inTaxTotalNum
+    : Number.isFinite(amountRemainingNum)
+      ? amountRemainingNum
+      : undefined;
+
   return (
-    <Content
-      invoice={clone(invoice)}
-      workspace={workspace}
-      workspaceURI={workspaceURI}
-      token={token}
-    />
+    <>
+      <TrackOnMount
+        event="view_invoice"
+        subapp={SUBAPP_CODES.invoices}
+        props={{
+          invoice_id: String(invoice.id),
+          ...(analyticsValue !== undefined ? {value: analyticsValue} : {}),
+          ...(invoice.currency?.code ? {currency: invoice.currency.code} : {}),
+          invoice_status: invoice.isUnpaid ? 'unpaid' : 'paid',
+        }}
+        fireKey={invoice.id}
+      />
+      <Content
+        invoice={clone(invoice)}
+        workspace={workspace}
+        workspaceURI={workspaceURI}
+        token={token}
+      />
+    </>
   );
 }
 

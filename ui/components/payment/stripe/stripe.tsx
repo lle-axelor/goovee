@@ -179,6 +179,7 @@ export function Stripe<TData>({
           }
 
           onApprove?.(result);
+          sse?.onPaymentUpdate(PAYMENT_UPDATE_STATUS.SUCCESS);
         }
       } catch (err) {
         toast({

@@ -20,6 +20,8 @@ import {i18n} from '@/locale';
 import {useToast} from '@/ui/hooks';
 import type {ComputedProduct, Product, Category, PageInfo} from '@/types';
 import type {PortalWorkspace} from '@/orm/workspace';
+import {useTrack} from '@/lib/analytics/use-track';
+import {SUBAPP_CODES} from '@/constants';
 
 // ---- LOCAL IMPORTS ---- //
 import {MobileSortBy, SortBy, ProductCard, ProductListItem} from '..';
@@ -69,6 +71,7 @@ export function ProductList({
   const view = searchParams.get('view') || VIEW.GRID;
   const [searching, setSearching] = useState<string>('');
   const {toast} = useToast();
+  const trackEvent = useTrack(SUBAPP_CODES.shop);
 
   const updateSearchParams = (
     values: Array<{
@@ -108,10 +111,15 @@ export function ProductList({
   const handleChangeSearch = (event: React.FormEvent) => {
     event.preventDefault();
     const formData = new FormData(event.target as HTMLFormElement);
-    updateSearchParams([
-      {key: 'page'},
-      {key: 'search', value: formData.get('search') as string},
-    ]);
+    const query = (formData.get('search') as string) ?? '';
+    if (query.trim()) {
+      trackEvent('search', {
+        query,
+        results_count: null,
+        scope: 'shop',
+      });
+    }
+    updateSearchParams([{key: 'page'}, {key: 'search', value: query}]);
   };
 
   const handleChangeSortBy = ({value}: {value: string}) => {

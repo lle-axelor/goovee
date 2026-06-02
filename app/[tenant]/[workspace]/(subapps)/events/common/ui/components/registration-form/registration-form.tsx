@@ -20,6 +20,7 @@ import {useToast} from '@/ui/hooks/use-toast';
 import {SUBAPP_CODES, SUBAPP_PAGE} from '@/constants';
 import {BadgeList, Button} from '@/ui/components';
 import {useSearchParams} from '@/ui/hooks';
+import {useTrack} from '@/lib/analytics/use-track';
 
 // ---- LOCAL IMPORTS ---- //
 import {
@@ -77,6 +78,7 @@ export const RegistrationForm = ({
   const router = useRouter();
   const {workspaceURI} = useWorkspace();
   const {toast} = useToast();
+  const trackEvent = useTrack(SUBAPP_CODES.events);
 
   const {searchParams} = useSearchParams();
   const stripeSessionId = searchParams.get('stripe_session_id');
@@ -395,6 +397,14 @@ export const RegistrationForm = ({
         toast({
           variant: 'success',
           title: i18n.t(SUCCESS_REGISTER_MESSAGE),
+        });
+        trackEvent('register_event_completed', {
+          portal_event_id: String(eventId),
+          attendee_count: Array.isArray(result) ? result.length : undefined,
+          ...(Number.isFinite(totalPrice) && totalPrice > 0
+            ? {value: totalPrice}
+            : {}),
+          success: true,
         });
         router.push(
           `${workspaceURI}/${SUBAPP_CODES.events}/${slug}/${SUBAPP_PAGE.register}/${SUBAPP_PAGE.confirmation}`,

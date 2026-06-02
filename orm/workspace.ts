@@ -148,6 +148,25 @@ export const portalAppConfigFields = {
   isFixedHeader: true,
   chatDisplayTypeSelect: true,
   termsOfUseAcceptanceText: true,
+  analyticsScriptInstanceList: {
+    select: {
+      isActive: true,
+      sequence: true,
+      template: {
+        name: true,
+        code: true,
+        placement: true,
+        loadStrategy: true,
+        isActive: true,
+      },
+      valueList: {
+        select: {
+          value: true,
+          parameter: {placeholderKey: true},
+        },
+      },
+    },
+  },
 } as const satisfies SelectOptions<AOSPortalAppConfig>;
 
 export type PortalAppConfig = Payload<

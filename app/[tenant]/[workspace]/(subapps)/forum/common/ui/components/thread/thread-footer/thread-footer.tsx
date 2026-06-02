@@ -1,6 +1,6 @@
 'use client';
 
-import {useMemo} from 'react';
+import {useCallback, useMemo} from 'react';
 
 // ---- CORE IMPORTS ---- //
 import {SUBAPP_CODES} from '@/constants';
@@ -19,6 +19,7 @@ import {
   createComment,
 } from '@/subapps/forum/common/action/action';
 import {PostWithMembership} from '@/subapps/forum/common/types/forum';
+import {useTrack} from '@/lib/analytics/use-track';
 
 export const ThreadFooter = ({
   post,
@@ -36,11 +37,45 @@ export const ThreadFooter = ({
   const isAllowToComment = useMemo(() => post?.isMember, [post]);
 
   const {workspaceURI} = useWorkspace();
+  const trackEvent = useTrack(SUBAPP_CODES.forum);
 
   const enableComment = isCommentEnabled({
     subapp: SUBAPP_CODES.forum,
     workspace: workspace,
   });
+
+  const trackedCreateComment = useCallback(
+    async (formData: FormData) => {
+      let bodyLength = 0;
+      try {
+        const content = formData.get('content');
+        if (typeof content === 'string') {
+          const parsed = JSON.parse(content);
+          bodyLength =
+            typeof parsed?.data?.text === 'string'
+              ? parsed.data.text.length
+              : 0;
+        }
+      } catch {
+        // ignore — tracking should never break the action
+      }
+
+      const result = await createComment(formData);
+
+      if (!result?.error) {
+        trackEvent('reply_forum_post', {
+          forum_post_id: String(post?.id),
+          ...(post?.forumGroup?.id !== undefined && {
+            forum_group_id: String(post.forumGroup.id),
+          }),
+          body_length: bodyLength,
+        });
+      }
+
+      return result;
+    },
+    [post?.id, post?.forumGroup?.id, trackEvent],
+  );
 
   if (!post) return <div />;
 
@@ -57,7 +92,7 @@ export const ThreadFooter = ({
       trackingField="publicBody"
       commentField="note"
       fetchComments={fetchComments}
-      createComment={createComment}
+      createComment={trackedCreateComment}
       {...(!isAllowToComment && {
         placeholder: JOIN_GROUP_TO_COMMENT,
       })}

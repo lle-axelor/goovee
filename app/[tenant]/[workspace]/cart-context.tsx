@@ -15,6 +15,7 @@ import {PREFIX_CART_KEY} from '@/constants';
 import {getitem, setitem} from '@/storage/local';
 import {useWorkspace} from './workspace-context';
 import type {ComputedProduct, Product} from '@/types';
+import {useTrack} from '@/lib/analytics/use-track';
 
 type CartContextType = {
   cart: any;
@@ -74,6 +75,8 @@ export default function CartContextProvider({
 
   const {data: session} = authClient.useSession();
   const user = session?.user;
+
+  const trackEvent = useTrack('shop');
 
   const cartKey = useMemo(
     () => PREFIX_CART_KEY + '-' + workspaceURL,
@@ -165,8 +168,22 @@ export default function CartContextProvider({
           }),
         }));
       }
+
+      const qty = Number(quantity);
+      const unitPrice = Number(
+        computedProduct?.price?.ati ??
+          computedProduct?.price?.wt ??
+          computedProduct?.product?.salePrice,
+      );
+      trackEvent('add_to_cart', {
+        product_id: String(productId),
+        product_name: computedProduct?.product?.name,
+        quantity: qty,
+        value: Number.isFinite(unitPrice) ? unitPrice * qty : undefined,
+        currency: computedProduct?.currency?.code,
+      });
     },
-    [getProductQuantity],
+    [getProductQuantity, trackEvent],
   );
 
   const decrementQuantity = useCallback(

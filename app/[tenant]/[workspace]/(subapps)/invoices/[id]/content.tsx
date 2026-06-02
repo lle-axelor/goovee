@@ -15,6 +15,7 @@ import {
   PaymentUpdateStatus,
   PAYMENT_UPDATE_STATUS,
 } from '@/lib/core/payment/sse/constants';
+import {useTrack} from '@/lib/analytics/use-track';
 
 // ---- LOCAL IMPORTS ---- //
 import {Invoice, Total} from '@/subapps/invoices/common/ui/components';
@@ -38,6 +39,7 @@ export default function Content({
 
   const router = useRouter();
   const {toast} = useToast();
+  const trackEvent = useTrack(SUBAPP_CODES.invoices);
 
   const invoiceType = isUnpaid ? INVOICE_TYPE.UNPAID : INVOICE_TYPE.PAID;
 
@@ -45,6 +47,13 @@ export default function Content({
     (status: PaymentUpdateStatus) => {
       router.refresh();
       if (status === PAYMENT_UPDATE_STATUS.SUCCESS) {
+        const amountNum = Number(invoice.amountRemaining?.value);
+        trackEvent('pay_invoice_completed', {
+          invoice_id: String(invoice.id),
+          ...(Number.isFinite(amountNum) ? {value: amountNum} : {}),
+          ...(invoice.currency?.code ? {currency: invoice.currency.code} : {}),
+          success: true,
+        });
         toast({
           title: i18n.t('Payment completed successfully'),
           variant: 'success',
@@ -68,7 +77,7 @@ export default function Content({
         });
       }
     },
-    [router, toast],
+    [router, toast, trackEvent, invoice],
   );
 
   return (

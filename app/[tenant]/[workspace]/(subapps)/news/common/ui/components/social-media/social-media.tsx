@@ -3,6 +3,8 @@
 import Link from 'next/link';
 
 // ---- CORE IMPORTS ---- //
+import {SUBAPP_CODES} from '@/constants';
+import {useTrack} from '@/lib/analytics/use-track';
 import {Avatar, AvatarImage} from '@/ui/components/avatar';
 import {i18n} from '@/locale';
 import {Skeleton} from '@/ui/components';
@@ -16,11 +18,14 @@ import {getSocialURL} from '../../../utils';
 
 type SocialMediaProps = {
   availableSocials?: string | null;
+  newsId?: string | number;
 };
 
 export const SocialMedia = ({
   availableSocials: availableSocialsProps,
+  newsId,
 }: SocialMediaProps) => {
+  const trackEvent = useTrack(SUBAPP_CODES.news);
   const availableSocials = SOCIAL_ICONS.filter(icon =>
     availableSocialsProps?.includes(icon.name),
   );
@@ -44,7 +49,14 @@ export const SocialMedia = ({
               href={redirectUrl!}
               target="_blank"
               rel="noopener noreferrer"
-              className="cursor-pointer">
+              className="cursor-pointer"
+              onClick={() => {
+                if (newsId === undefined) return;
+                trackEvent('share_news', {
+                  news_id: String(newsId),
+                  social_channel: name,
+                });
+              }}>
               <Avatar
                 className={`w-8 h-8 bg-[${color}] p-1 rounded cursor-pointer`}>
                 <AvatarImage
