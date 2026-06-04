@@ -8,99 +8,153 @@ import {clone} from '@/utils';
 import {workspacePathname} from '@/utils/workspace';
 import {findWorkspace} from '@/orm/workspace';
 import {manager} from '@/tenant';
+import {t} from '@/locale/server';
 import type {Client} from '@/goovee/.generated/client';
 import type {User} from '@/types';
 import type {PortalWorkspace} from '@/orm/workspace';
 
 // ---- LOCAL IMPORTS ---- //
 import {findProducts} from '@/app/[tenant]/[workspace]/(subapps)/shop/common/orm/product';
-import {shouldHidePricesAndPurchase} from '@/orm/product';
+import {findCategories} from '@/app/[tenant]/[workspace]/(subapps)/shop/common/orm/categories';
 import {
-  findCategories,
-  findFeaturedCategories,
-} from '@/app/[tenant]/[workspace]/(subapps)/shop/common/orm/categories';
-
-import {
-  ProductCategories,
-  HomeCarousel,
-  FeaturedCategories,
-  CarouselSkeleton,
-  CategoriesSkeleton,
-  FeaturedCategoriesSkeleton,
   OrderAlert,
+  ShopV3Catalog,
+  type ShopV3Category,
+  type ShopV3Labels,
 } from '@/app/[tenant]/[workspace]/(subapps)/shop/common/ui/components';
 
-async function Categories({
+const CATALOG_LIMIT = 500;
+
+async function Catalog({
+  workspace,
   client,
   user,
-  workspace,
+  config,
 }: {
+  workspace: PortalWorkspace | Cloned<PortalWorkspace>;
   client: Client;
   user: User | undefined;
-  workspace: PortalWorkspace | Cloned<PortalWorkspace>;
+  config: any;
 }) {
-  const categories = await findCategories({
-    workspace,
-    client,
-    user,
-  }).then(clone);
+  const [productsRes, categoriesRes, labels] = await Promise.all([
+    findProducts({
+      workspace,
+      client,
+      user,
+      config,
+      page: 1,
+      limit: CATALOG_LIMIT,
+    }).then(clone),
+    findCategories({workspace, client, user}).then(clone),
+    buildLabels(),
+  ]);
 
-  const parentcategories = categories?.filter((c: any) => !c.parent);
+  const products: any[] = Array.isArray(productsRes)
+    ? productsRes
+    : ((productsRes as any)?.products ?? []);
 
-  return <ProductCategories categories={parentcategories} />;
-}
-
-async function Carousel({workspace}: any) {
-  const carouselList = workspace?.config?.carouselList;
-
-  return <HomeCarousel images={carouselList} />;
-}
-
-async function Featured({
-  client,
-  user,
-  workspace,
-}: {
-  client: Client;
-  user: User | undefined;
-  workspace: PortalWorkspace | Cloned<PortalWorkspace>;
-}) {
-  const featuredCategories: any = await findFeaturedCategories({
-    workspace: workspace!,
-    client,
-    user,
-  }).then(clone);
-
-  for (const category of featuredCategories) {
-    if (category?.productList?.length) {
-      const res: any = await findProducts({
-        ids: category.productList.map((p: any) => p.id),
-        workspace: workspace!,
-        user,
-        client,
-        categoryids: [category.id],
-      }).then(clone);
-
-      category.products = res?.products;
-    }
-  }
-
-  const hidePriceAndPurchase = await shouldHidePricesAndPurchase({
-    user,
-    workspace,
-    client,
-  });
+  const allCategories = (categoriesRes as any[]) ?? [];
+  // Keep only leaf categories that actually contain products (avoids parent
+  // "all-products" buckets and empty placeholders cluttering the sidebar).
+  const categoriesWithProducts = new Set(
+    products
+      .map(p => String(p?.product?.productCategory?.id ?? ''))
+      .filter(Boolean),
+  );
+  const categories: ShopV3Category[] = allCategories
+    .filter(c => categoriesWithProducts.has(String(c.id)))
+    .map(c => ({id: c.id, name: c.name, slug: c.slug}));
 
   return (
-    <FeaturedCategories
-      categories={featuredCategories}
-      workspace={workspace}
-      hidePriceAndPurchase={hidePriceAndPurchase}
+    <ShopV3Catalog
+      categories={categories}
+      products={products}
+      labels={labels}
     />
   );
 }
 
-async function Shop({params}: {params: {tenant: string; workspace: string}}) {
+async function buildLabels(): Promise<ShopV3Labels> {
+  const [
+    categoriesTitle,
+    allProducts,
+    availabilityTitle,
+    inStockOnly,
+    defaultPageTitle,
+    productsLabel,
+    productLabel,
+    searchPlaceholder,
+    sortRelevance,
+    sortPriceAsc,
+    sortPriceDesc,
+    sortName,
+    inStockBadge,
+    outOfStockBadge,
+    emptyTitle,
+    emptySubtitle,
+  ] = await Promise.all([
+    t('Categories'),
+    t('All products'),
+    t('Availability'),
+    t('In stock only'),
+    t('Catalogue'),
+    t('products'),
+    t('product'),
+    t('Search…'),
+    t('Relevance'),
+    t('Price ascending'),
+    t('Price descending'),
+    t('Name A-Z'),
+    t('In stock'),
+    t('Out of stock'),
+    t('No product matches your filters'),
+    t('Try adjusting the category, search or availability filters.'),
+  ]);
+
+  return {
+    categoriesTitle,
+    allProducts,
+    availabilityTitle,
+    inStockOnly,
+    defaultPageTitle,
+    productsLabel,
+    productLabel,
+    searchPlaceholder,
+    sortRelevance,
+    sortPriceAsc,
+    sortPriceDesc,
+    sortName,
+    inStockBadge,
+    outOfStockBadge,
+    emptyTitle,
+    emptySubtitle,
+  };
+}
+
+function CatalogSkeleton() {
+  return (
+    <div className="flex h-full min-h-[calc(100vh-4rem)] bg-ink-25">
+      <div className="w-[260px] shrink-0 bg-white border-r border-ink-100 px-[18px] py-5" />
+      <div className="flex-1 px-8 py-7">
+        <div className="h-8 w-64 bg-ink-100 rounded mb-2 animate-pulse" />
+        <div className="h-4 w-32 bg-ink-100 rounded mb-6 animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          {[0, 1, 2, 3, 4, 5].map(i => (
+            <div
+              key={i}
+              className="h-[260px] bg-white rounded-xl border border-ink-100 animate-pulse"
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default async function Page(props: {
+  params: Promise<{tenant: string; workspace: string}>;
+}) {
+  const params = await props.params;
   const {tenant: tenantId} = params;
 
   const session = await getSession();
@@ -110,7 +164,7 @@ async function Shop({params}: {params: {tenant: string; workspace: string}}) {
 
   const tenant = await manager.getTenant(tenantId);
   if (!tenant) return notFound();
-  const {client} = tenant;
+  const {client, config} = tenant;
 
   const workspace = await findWorkspace({
     user,
@@ -123,46 +177,14 @@ async function Shop({params}: {params: {tenant: string; workspace: string}}) {
   }
 
   return (
-    <div>
-      <div className="relative">
-        <Suspense fallback={<CategoriesSkeleton />}>
-          <Categories workspace={workspace} user={user} client={client} />
-        </Suspense>
-      </div>
-      <Suspense fallback={<CarouselSkeleton />}>
-        <Carousel workspace={workspace} />
-      </Suspense>
-      <div className="container flex flex-col gap-6 mx-auto px-2 mb-4">
-        <Suspense fallback={<FeaturedCategoriesSkeleton />}>
-          <Featured workspace={workspace} user={user} client={client} />
-        </Suspense>
-      </div>
-    </div>
-  );
-}
-
-function ShopSkeleton() {
-  return (
-    <div>
-      <div className="relative">
-        <CategoriesSkeleton />
-      </div>
-      <CarouselSkeleton />
-      <div className="container flex flex-col gap-6 mx-auto px-2 mb-4">
-        <FeaturedCategoriesSkeleton />
-      </div>
-    </div>
-  );
-}
-
-export default async function Page(props: {
-  params: Promise<{tenant: string; workspace: string}>;
-}) {
-  const params = await props.params;
-  return (
     <>
-      <Suspense fallback={<ShopSkeleton />}>
-        <Shop params={params} />
+      <Suspense fallback={<CatalogSkeleton />}>
+        <Catalog
+          workspace={workspace}
+          client={client}
+          user={user}
+          config={config}
+        />
       </Suspense>
       <OrderAlert />
     </>

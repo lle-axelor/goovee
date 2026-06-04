@@ -34,3 +34,7 @@ export {
 } from './skeleton';
 export {Link} from './link';
 export {OrderAlert} from './order-alert';
+export {ShopV3ProductCard} from './shop-v3-product-card';
+export type {ShopV3Category} from './shop-v3-product-card';
+export {ShopV3Catalog} from './shop-v3-catalog';
+export type {ShopV3Labels} from './shop-v3-catalog';
