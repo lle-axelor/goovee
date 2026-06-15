@@ -31,6 +31,8 @@ export interface ShopV3Labels {
   sortName: string;
   inStockBadge: string;
   outOfStockBadge: string;
+  addToCartLabel: string;
+  addedLabel: string;
   emptyTitle: string;
   emptySubtitle: string;
 }
@@ -90,15 +92,21 @@ export function ShopV3Catalog({
   );
 
   // Compute counts per category from the full product list (unfiltered).
+  // The portal exposes products via product.portalCategorySet (many-to-many),
+  // not via the primary productCategory — we mirror that here so counts and
+  // the filter stay consistent with the ORM where clause.
   const countsByCat = useMemo(() => {
     const map = new Map<string, number>();
     map.set('all', products.length);
     for (const p of products) {
-      const catId = String(
-        p?.product?.productCategory?.id ?? p?.productCategory?.id ?? '',
-      );
-      if (!catId) continue;
-      map.set(catId, (map.get(catId) ?? 0) + 1);
+      const portal = p?.product?.portalCategorySet ?? [];
+      const seen = new Set<string>();
+      for (const c of portal) {
+        const id = String(c?.id ?? '');
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        map.set(id, (map.get(id) ?? 0) + 1);
+      }
     }
     return map;
   }, [products]);
@@ -112,12 +120,10 @@ export function ShopV3Catalog({
   const filtered = useMemo(() => {
     let out = products;
     if (activeCat !== 'all') {
-      out = out.filter(
-        p =>
-          String(
-            p?.product?.productCategory?.id ?? p?.productCategory?.id ?? '',
-          ) === activeCat,
-      );
+      out = out.filter(p => {
+        const portal = p?.product?.portalCategorySet ?? [];
+        return portal.some((c: any) => String(c?.id) === activeCat);
+      });
     }
     if (stockOnly) {
       out = out.filter(p => !(p?.product?.outOfStockConfig?.outOfStock));
@@ -248,10 +254,25 @@ export function ShopV3Catalog({
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
               {filtered.map(p => {
-                const catId = String(
-                  p?.product?.productCategory?.id ?? p?.productCategory?.id ?? '',
-                );
-                const cat = categoryById.get(catId) ?? null;
+                // Pick a portal category for the card badge — prefer the
+                // currently active filter, otherwise the first one. Fall back
+                // to the primary productCategory if portalCategorySet is empty
+                // (some products may bypass portal exposure but still appear
+                // when no filter is set).
+                const portal = p?.product?.portalCategorySet ?? [];
+                const portalMatch =
+                  activeCat !== 'all'
+                    ? portal.find((c: any) => String(c?.id) === activeCat)
+                    : portal[0];
+                const primary = p?.product?.productCategory;
+                const candidate = portalMatch ?? portal[0] ?? primary ?? null;
+                const cat = candidate
+                  ? (categoryById.get(String(candidate.id)) ?? {
+                      id: candidate.id,
+                      name: candidate.name,
+                      slug: candidate.slug,
+                    })
+                  : null;
                 return (
                   <ShopV3ProductCard
                     key={p?.product?.id ?? p?.id}
@@ -259,6 +280,8 @@ export function ShopV3Catalog({
                     category={cat}
                     inStockLabel={labels.inStockBadge}
                     outOfStockLabel={labels.outOfStockBadge}
+                    addToCartLabel={labels.addToCartLabel}
+                    addedLabel={labels.addedLabel}
                   />
                 );
               })}

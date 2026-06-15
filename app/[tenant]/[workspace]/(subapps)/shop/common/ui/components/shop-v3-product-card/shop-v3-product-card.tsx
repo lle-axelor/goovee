@@ -1,9 +1,13 @@
 'use client';
 
+import {useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import {MdAddShoppingCart, MdCheck} from 'react-icons/md';
 
 import {useWorkspace} from '@/app/[tenant]/[workspace]/workspace-context';
+import {useCart} from '@/app/[tenant]/[workspace]/cart-context';
+import {useToast} from '@/ui/hooks';
 import {getProductImageURL} from '@/utils/files';
 import {i18n} from '@/locale';
 import {cn} from '@/utils/css';
@@ -25,16 +29,27 @@ export function ShopV3ProductCard({
   category,
   inStockLabel,
   outOfStockLabel,
+  addToCartLabel,
+  addedLabel,
 }: {
   product: any;
   category: ShopV3Category | null;
   inStockLabel: string;
   outOfStockLabel: string;
+  addToCartLabel: string;
+  addedLabel: string;
 }) {
   const {tenant, workspaceURI} = useWorkspace();
+  const {updateQuantity, getProductQuantity} = useCart();
+  const {toast} = useToast();
+
   const p = product?.product ?? product;
   const price = product?.price;
   const outOfStock = p?.outOfStockConfig?.outOfStock ?? false;
+  const canBuy = !!p?.outOfStockConfig?.canBuy;
+
+  const [adding, setAdding] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
 
   const imageId = p?.thumbnailImage?.id || p?.images?.[0];
   const imageURL = imageId ? getProductImageURL(imageId, tenant) : null;
@@ -46,6 +61,29 @@ export function ShopV3ProductCard({
   const href = category?.slug
     ? `${workspaceURI}/shop/category/${category.slug}/product/${p.slug}`
     : `${workspaceURI}/shop/product/${p.slug}`;
+
+  const handleAdd = async (e: React.MouseEvent) => {
+    // Card is wrapped in <Link> — stop the click from navigating to the
+    // product detail when the user hits the add-to-cart button.
+    e.preventDefault();
+    e.stopPropagation();
+    if (!canBuy || adding) return;
+    setAdding(true);
+    try {
+      const existing = await getProductQuantity(p.id);
+      await updateQuantity({
+        productId: p.id,
+        quantity: (existing || 0) + 1,
+        computedProduct: product,
+        images: (p.images ?? []).map(String),
+      });
+      toast({title: i18n.t('Added to cart')});
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 1500);
+    } finally {
+      setAdding(false);
+    }
+  };
 
   return (
     <Link
@@ -86,19 +124,42 @@ export function ShopV3ProductCard({
         {p.code && (
           <div className="text-[10.5px] text-ink-500 font-mono">{p.code}</div>
         )}
-        <div className="mt-auto pt-2 border-t border-ink-100 flex items-baseline justify-between">
+        <div className="mt-auto pt-2 border-t border-ink-100 flex items-center justify-between gap-2">
           <div className="text-base font-extrabold text-ink-900 tabular-nums">
             {price?.displayPrimary ?? '—'}
           </div>
-          <span
-            className={cn(
-              'text-[10px] font-bold uppercase tracking-[0.04em] px-1.5 py-0.5 rounded',
-              outOfStock
-                ? 'bg-status-rejected-bg text-status-rejected-fg'
-                : 'bg-mint-50 text-mint-700',
-            )}>
-            {outOfStock ? outOfStockLabel : inStockLabel}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span
+              className={cn(
+                'text-[10px] font-bold uppercase tracking-[0.04em] px-1.5 py-0.5 rounded',
+                outOfStock
+                  ? 'bg-status-rejected-bg text-status-rejected-fg'
+                  : 'bg-mint-50 text-mint-700',
+              )}>
+              {outOfStock ? outOfStockLabel : inStockLabel}
+            </span>
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={!canBuy || adding}
+              aria-label={justAdded ? addedLabel : addToCartLabel}
+              title={justAdded ? addedLabel : addToCartLabel}
+              className={cn(
+                'inline-grid place-items-center w-9 h-9 rounded-lg transition-colors shrink-0',
+                !canBuy
+                  ? 'bg-ink-100 text-ink-400 cursor-not-allowed'
+                  : justAdded
+                    ? 'bg-mint-50 text-mint-700'
+                    : 'bg-royal text-white hover:bg-royal-dark',
+                canBuy && adding && 'opacity-70 cursor-not-allowed',
+              )}>
+              {justAdded ? (
+                <MdCheck className="text-base" />
+              ) : (
+                <MdAddShoppingCart className="text-base" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </Link>

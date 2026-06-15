@@ -54,13 +54,18 @@ async function Catalog({
     : ((productsRes as any)?.products ?? []);
 
   const allCategories = (categoriesRes as any[]) ?? [];
-  // Keep only leaf categories that actually contain products (avoids parent
-  // "all-products" buckets and empty placeholders cluttering the sidebar).
-  const categoriesWithProducts = new Set(
-    products
-      .map(p => String(p?.product?.productCategory?.id ?? ''))
-      .filter(Boolean),
-  );
+  // Keep only leaf categories that actually contain products in the portal —
+  // the ORM filter clauses pivot through portalCategorySet (many-to-many),
+  // not productCategory (the product's primary business category). Using
+  // productCategory here would surface categories that look populated but
+  // resolve to 0 products when clicked.
+  const categoriesWithProducts = new Set<string>();
+  for (const p of products) {
+    const portal = p?.product?.portalCategorySet ?? [];
+    for (const c of portal) {
+      if (c?.id) categoriesWithProducts.add(String(c.id));
+    }
+  }
   const categories: ShopV3Category[] = allCategories
     .filter(c => categoriesWithProducts.has(String(c.id)))
     .map(c => ({id: c.id, name: c.name, slug: c.slug}));
@@ -90,6 +95,8 @@ async function buildLabels(): Promise<ShopV3Labels> {
     sortName,
     inStockBadge,
     outOfStockBadge,
+    addToCartLabel,
+    addedLabel,
     emptyTitle,
     emptySubtitle,
   ] = await Promise.all([
@@ -107,6 +114,8 @@ async function buildLabels(): Promise<ShopV3Labels> {
     t('Name A-Z'),
     t('In stock'),
     t('Out of stock'),
+    t('Add to cart'),
+    t('Added'),
     t('No product matches your filters'),
     t('Try adjusting the category, search or availability filters.'),
   ]);
@@ -126,6 +135,8 @@ async function buildLabels(): Promise<ShopV3Labels> {
     sortName,
     inStockBadge,
     outOfStockBadge,
+    addToCartLabel,
+    addedLabel,
     emptyTitle,
     emptySubtitle,
   };
