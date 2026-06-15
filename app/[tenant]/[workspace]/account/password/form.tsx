@@ -134,7 +134,7 @@ export default function PasswordForm() {
             </div>
 
             <div className="space-y-4 text-end">
-              <Button variant="success" disabled={isSubmitting}>
+              <Button variant="royal" disabled={isSubmitting}>
                 {i18n.t('Change password')}
               </Button>
             </div>

@@ -6,5 +6,5 @@ export default async function Page(props: {
 }) {
   const params = await props.params;
   const {workspaceURI} = workspacePathname(params);
-  redirect(`${workspaceURI}/account/workspace`);
+  redirect(`${workspaceURI}/account/apps`);
 }

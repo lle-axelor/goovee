@@ -755,7 +755,7 @@ export default function Personal({
               </div>
             </div>
             <div className="space-y-4 text-end">
-              <Button variant="success">{i18n.t('Save Settings')}</Button>
+              <Button variant="royal">{i18n.t('Save Settings')}</Button>
             </div>
           </div>
         </form>

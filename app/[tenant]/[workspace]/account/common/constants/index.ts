@@ -1,112 +1,137 @@
 import {Role} from '../types';
 
 export const ROUTES = {
-  // Legacy routes — kept for backwards compatibility; each redirects
-  // to its new consolidated route.
+  // The 8 original Goovee tabs — each has its own page again.
   personal: 'personal',
-  prefrences: 'preferences',
+  preferences: 'preferences',
   password: 'password',
   addresses: 'addresses',
+  directory: 'directory',
   members: 'members',
   notifications: 'notifications',
   apps: 'apps',
-  settings: 'settings',
-  directory: 'directory',
 
-  // New consolidated routes (4-tab fusion)
+  // Legacy consolidated routes — kept as redirects for backwards compatibility.
   profile: 'profile',
   security: 'security',
   workspace: 'workspace',
+  settings: 'settings',
 };
 
-// ---- Legacy 9-item menus (kept for now; superseded visually by ACCOUNT_TABS) ----
+// ---- Grouped lateral rail (8 original tabs, design "AccountV3Rail") ----
 
-export const GLOBAL_MENU = [
-  {
-    label: 'Personal settings',
-    route: ROUTES.personal,
-  },
-  {
-    label: 'Preferences',
-    route: ROUTES.prefrences,
-  },
-  {
-    label: 'Password',
-    route: ROUTES.password,
-  },
+export type AccountTabKey =
+  | 'personal'
+  | 'preferences'
+  | 'password'
+  | 'addresses'
+  | 'directory'
+  | 'members'
+  | 'notifications'
+  | 'apps';
 
-  {
-    label: 'Addresses',
-    route: ROUTES.addresses,
-  },
-  {
-    label: 'Directory settings',
-    route: ROUTES.directory,
-  },
-];
+export type AccountTabGroup = 'Account' | 'Security' | 'Team';
 
-export const WORKSPACE_MENU = [
-  {
-    label: 'Notifications',
-    route: ROUTES.notifications,
-  },
-  {
-    label: 'My apps',
-    route: ROUTES.apps,
-  },
-  {
-    label: 'Settings',
-    route: ROUTES.settings,
-  },
-];
-
-export const ADMIN_WORKSPACE_MENU = [
-  {
-    label: 'Members',
-    route: ROUTES.members,
-  },
-  ...WORKSPACE_MENU,
-];
-
-// ---- New 4-tab grouping (visual layer over the 9 routes) ----
+export type AccountTabIcon =
+  | 'personal'
+  | 'preferences'
+  | 'password'
+  | 'addresses'
+  | 'directory'
+  | 'members'
+  | 'notifications'
+  | 'apps';
 
 export type AccountTab = {
-  key: 'profile' | 'security' | 'notifications' | 'workspace';
+  key: AccountTabKey;
   label: string;
   subtitle: string;
-  routes: string[];
+  description: string;
+  group: AccountTabGroup;
+  route: string;
+  icon: AccountTabIcon;
   adminOnly?: boolean;
 };
 
+export const ACCOUNT_GROUPS: AccountTabGroup[] = [
+  'Account',
+  'Security',
+  'Team',
+];
+
 export const ACCOUNT_TABS: AccountTab[] = [
   {
-    key: 'profile',
-    label: 'Profile',
-    subtitle: 'Identity, preferences, directory visibility',
-    routes: [
-      ROUTES.profile,
-      ROUTES.personal,
-      ROUTES.prefrences,
-      ROUTES.directory,
-    ],
+    key: 'personal',
+    group: 'Account',
+    route: ROUTES.personal,
+    icon: 'personal',
+    label: 'Personal settings',
+    subtitle: 'Company identity',
+    description: 'Company information shown across your workspace.',
   },
   {
-    key: 'security',
-    label: 'Security',
-    subtitle: 'Password and addresses',
-    routes: [ROUTES.security, ROUTES.password, ROUTES.addresses],
+    key: 'preferences',
+    group: 'Account',
+    route: ROUTES.preferences,
+    icon: 'preferences',
+    label: 'Preferences',
+    subtitle: 'Default workspace and language',
+    description: 'Default behavior when you sign in.',
+  },
+  {
+    key: 'password',
+    group: 'Security',
+    route: ROUTES.password,
+    icon: 'password',
+    label: 'Password',
+    subtitle: 'Change your password',
+    description: 'Use a unique password of at least 12 characters.',
+  },
+  {
+    key: 'addresses',
+    group: 'Security',
+    route: ROUTES.addresses,
+    icon: 'addresses',
+    label: 'Addresses',
+    subtitle: 'Billing and delivery',
+    description: 'Default addresses for billing and delivery.',
+  },
+  {
+    key: 'directory',
+    group: 'Security',
+    route: ROUTES.directory,
+    icon: 'directory',
+    label: 'Directory settings',
+    subtitle: 'Public partner profile',
+    description: 'What other partners can see about your company.',
+  },
+  {
+    key: 'members',
+    group: 'Team',
+    route: ROUTES.members,
+    icon: 'members',
+    adminOnly: true,
+    label: 'Members',
+    subtitle: 'Users and invitations',
+    description: 'Manage who can access this workspace and their roles.',
   },
   {
     key: 'notifications',
+    group: 'Team',
+    route: ROUTES.notifications,
+    icon: 'notifications',
     label: 'Notifications',
-    subtitle: 'Push and e-mail preferences',
-    routes: [ROUTES.notifications],
+    subtitle: 'Push and e-mail',
+    description: 'Choose what you receive and where.',
   },
   {
-    key: 'workspace',
-    label: 'Workspace',
-    subtitle: 'Members, applications and space settings',
-    routes: [ROUTES.workspace, ROUTES.members, ROUTES.apps, ROUTES.settings],
+    key: 'apps',
+    group: 'Team',
+    route: ROUTES.apps,
+    icon: 'apps',
+    label: 'My apps',
+    subtitle: 'Visible applications',
+    description: 'Enable or hide applications in the side menu.',
   },
 ];
 

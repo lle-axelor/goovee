@@ -222,7 +222,7 @@ export default function PreferencesForm() {
             )}
 
             <div className="space-y-4 text-end">
-              <Button variant="success">{i18n.t('Save Preference')}</Button>
+              <Button variant="royal">{i18n.t('Save Preference')}</Button>
             </div>
           </div>
         </form>
