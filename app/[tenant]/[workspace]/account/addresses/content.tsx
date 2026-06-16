@@ -4,7 +4,7 @@ import {useRouter} from 'next/navigation';
 import {useEffect, useState, useTransition} from 'react';
 
 // ---- CORE IMPORTS ---- //
-import {Button, Separator} from '@/ui/components';
+import {Button} from '@/ui/components';
 import {i18n} from '@/locale';
 import {ADDRESS_TYPE, SUBAPP_CODES, SUBAPP_PAGE} from '@/constants';
 import {useWorkspace} from '@/app/[tenant]/[workspace]/workspace-context';
@@ -218,65 +218,59 @@ function Content({
   }
 
   return (
-    <>
-      <div className="bg-white p-4 rounded-lg flex flex-col gap-4">
-        {isSubAppActive && (
-          <>
-            <h4 className="text-xl font-medium mb-0">
-              {i18n.t('Choose your address')}
-            </h4>
-            <Separator className="my-2" />
-          </>
-        )}
+    <div className="flex flex-col gap-4">
+      {isSubAppActive && (
+        <h4 className="text-lg font-bold text-ink-900 mb-0">
+          {i18n.t('Choose your address')}
+        </h4>
+      )}
 
-        <div className="border border-gray-400 p-4 rounded-lg flex flex-col gap-4">
-          <div className="flex flex-col gap-4">
-            <div className="font-semibold text-xl">
-              {i18n.t('Invoicing address')}
-            </div>
-            <AddressesList
-              isFromQuotation={fromQuotation}
-              currentAddress={selectedAddresses.invoicing}
-              addresses={invoicingAddresses}
-              type={ADDRESS_TYPE.invoicing}
-              onCreate={handleCreate}
-              onEdit={handleEdit}
-              onSelect={isSubAppActive ? handleAddressSelection : undefined}
-              onDelete={handleDelete}
-              onDefault={handleDefault}
-            />
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white border border-ink-100 rounded-xl shadow-xs p-5 flex flex-col gap-3">
+          <h3 className="text-sm font-bold text-ink-900">
+            {i18n.t('Invoicing address')}
+          </h3>
+          <AddressesList
+            isFromQuotation={fromQuotation}
+            currentAddress={selectedAddresses.invoicing}
+            addresses={invoicingAddresses}
+            type={ADDRESS_TYPE.invoicing}
+            onCreate={handleCreate}
+            onEdit={handleEdit}
+            onSelect={isSubAppActive ? handleAddressSelection : undefined}
+            onDelete={handleDelete}
+            onDefault={handleDefault}
+          />
+        </div>
 
-          <Separator className="my-2" />
-
-          <div className="flex flex-col gap-4">
-            <div className="font-semibold text-xl">
-              {i18n.t('Delivery address')}
-            </div>
-            <AddressesList
-              isFromQuotation={fromQuotation}
-              currentAddress={selectedAddresses.delivery}
-              addresses={deliveryAddresses}
-              type={ADDRESS_TYPE.delivery}
-              onCreate={handleCreate}
-              onEdit={handleEdit}
-              onSelect={isSubAppActive ? handleAddressSelection : undefined}
-              onDelete={handleDelete}
-              onDefault={handleDefault}
-            />
-          </div>
+        <div className="bg-white border border-ink-100 rounded-xl shadow-xs p-5 flex flex-col gap-3">
+          <h3 className="text-sm font-bold text-ink-900">
+            {i18n.t('Delivery address')}
+          </h3>
+          <AddressesList
+            isFromQuotation={fromQuotation}
+            currentAddress={selectedAddresses.delivery}
+            addresses={deliveryAddresses}
+            type={ADDRESS_TYPE.delivery}
+            onCreate={handleCreate}
+            onEdit={handleEdit}
+            onSelect={isSubAppActive ? handleAddressSelection : undefined}
+            onDelete={handleDelete}
+            onDefault={handleDefault}
+          />
         </div>
       </div>
+
       {isSubAppActive && (
         <Button
-          variant="success"
+          variant="royal"
           className="w-full py-1.5"
           onClick={handleConfirm}
           disabled={isPending}>
           {isPending ? i18n.t('Processing...') : i18n.t('Confirm address')}
         </Button>
       )}
-    </>
+    </div>
   );
 }
 

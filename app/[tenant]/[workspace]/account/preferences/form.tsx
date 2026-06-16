@@ -150,83 +150,81 @@ export default function PreferencesForm() {
   }
 
   return (
-    <div className="bg-white p-2 lg:p-0 lg:bg-inherit">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="px-2">
-          <div className="space-y-4">
-            {!user?.isContact && (
-              <FormField
-                control={form.control}
-                name="defaultWorkspace"
-                render={({field}) => (
-                  <FormItem>
-                    <FormLabel>{i18n.t('Default Workspace')}</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value?.toString()}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue
-                            placeholder={i18n.t(
-                              'Select your default workspace',
-                            )}
-                          />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {workspaces.map((workspace: any) => (
-                          <SelectItem
-                            value={workspace.id?.toString()}
-                            key={workspace.id}>
-                            {workspace.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-            {Boolean(localizations?.length) && (
-              <FormField
-                control={form.control}
-                name="localization"
-                render={({field}) => (
-                  <FormItem>
-                    <FormLabel>{i18n.t('Language')}</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value?.toString()}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue
-                            placeholder={i18n.t('Select your language')}
-                          />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {localizations.map((localization: any) => (
-                          <SelectItem
-                            value={localization.id}
-                            key={localization.id}>
-                            {localization.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-col gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {!user?.isContact && (
+            <FormField
+              control={form.control}
+              name="defaultWorkspace"
+              render={({field}) => (
+                <FormItem>
+                  <FormLabel>{i18n.t('Default Workspace')}</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value?.toString()}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={i18n.t('Select your default workspace')}
+                        />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {workspaces.map((workspace: any) => (
+                        <SelectItem
+                          value={workspace.id?.toString()}
+                          key={workspace.id}>
+                          {workspace.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+          {Boolean(localizations?.length) && (
+            <FormField
+              control={form.control}
+              name="localization"
+              render={({field}) => (
+                <FormItem>
+                  <FormLabel>{i18n.t('Language')}</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value?.toString()}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={i18n.t('Select your language')}
+                        />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {localizations.map((localization: any) => (
+                        <SelectItem
+                          value={localization.id}
+                          key={localization.id}>
+                          {localization.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+        </div>
 
-            <div className="space-y-4 text-end">
-              <Button variant="royal">{i18n.t('Save Preference')}</Button>
-            </div>
-          </div>
-        </form>
-      </Form>
-    </div>
+        <div className="flex justify-end">
+          <Button variant="royal">{i18n.t('Save Preference')}</Button>
+        </div>
+      </form>
+    </Form>
   );
 }

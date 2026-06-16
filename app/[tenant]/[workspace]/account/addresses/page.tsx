@@ -7,15 +7,19 @@ import {workspacePathname} from '@/utils/workspace';
 import {findSubappAccess} from '@/orm/workspace';
 import {SUBAPP_CODES} from '@/constants';
 import {PartnerKey} from '@/types';
-import {findDeliveryAddresses, findInvoicingAddresses} from '@/orm/address';
+import {
+  findAddresses,
+  findCountries,
+  findDeliveryAddresses,
+  findInvoicingAddresses,
+} from '@/orm/address';
 import {getWhereClauseForEntity} from '@/utils/filters';
 import {manager} from '@/tenant';
-import {t} from '@/lib/core/locale/server';
 import {findQuotation} from '@/subapps/quotations/common/orm/quotations';
 
 // ---- LOCAL IMPORTS ---- //
 import AddressesContent from './content';
-import {SectionHeader} from '../common/ui/components';
+import {AddressBook} from './common/ui/components';
 
 interface PageParams {
   params: Promise<{id: string; tenant: string; workspace: string}>;
@@ -47,6 +51,26 @@ export default async function Page(props: PageParams) {
   const {workspaceURL} = workspacePathname(params);
   const userId = getPartnerId(user);
 
+  const fromQuotation = !!quotationId;
+  const fromCheckout = !!checkout;
+  const standalone = !fromQuotation && !fromCheckout;
+
+  // Standalone account tab → smart address book.
+  if (standalone) {
+    const [addresses, countries] = await Promise.all([
+      findAddresses(userId, client).then(clone),
+      findCountries(client).then(clone),
+    ]);
+
+    return (
+      <AddressBook
+        addresses={addresses || []}
+        countries={(countries as any) || []}
+      />
+    );
+  }
+
+  // Checkout / quotation → existing address selection flow.
   let data = {
     recordId: null as any,
     address: {invoicingAddress: null, deliveryAddress: null},
@@ -90,21 +114,8 @@ export default async function Page(props: PageParams) {
     findInvoicingAddresses(userId, client).then(clone),
   ]);
 
-  const fromQuotation = !!quotationId;
-  const fromCheckout = !!checkout;
-  const standalone = !fromQuotation && !fromCheckout;
-
   return (
     <div className="flex flex-col gap-6">
-      {standalone && (
-        <SectionHeader
-          eyebrow={await t('Security')}
-          title={await t('Addresses')}
-          description={await t(
-            'Manage billing and delivery addresses used on orders and quotations.',
-          )}
-        />
-      )}
       <AddressesContent
         quotation={{
           id: data.recordId,

@@ -6,11 +6,9 @@ import {findGooveeUserByEmail, isAdminContact} from '@/orm/partner';
 import {findWorkspace} from '@/orm/workspace';
 import {workspacePathname} from '@/utils/workspace';
 import {manager} from '@/lib/core/tenant';
-import {t} from '@/lib/core/locale/server';
 
 // ---- LOCAL IMPORTS ---- //
 import Form from './form';
-import {SectionHeader} from '../common/ui/components';
 
 export default async function Page(props: {
   params: Promise<{tenant: string; workspace: string}>;
@@ -53,19 +51,10 @@ export default async function Page(props: {
   );
 
   return (
-    <div className="flex flex-col gap-6">
-      <SectionHeader
-        eyebrow={await t('Security')}
-        title={await t('Directory settings')}
-        description={await t('What other partners can see about your company.')}
-      />
-      <div className="bg-white border border-ink-100 rounded-xl shadow-xs p-6">
-        <Form
-          partner={partner}
-          isPartner={isPartnerUser}
-          isAdminContact={isAdminContactUser}
-        />
-      </div>
-    </div>
+    <Form
+      partner={partner}
+      isPartner={isPartnerUser}
+      isAdminContact={isAdminContactUser}
+    />
   );
 }

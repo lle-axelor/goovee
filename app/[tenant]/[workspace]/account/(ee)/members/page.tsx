@@ -6,13 +6,11 @@ import {workspacePathname} from '@/utils/workspace';
 import {findWorkspace} from '@/orm/workspace';
 import {isAdminContact, isPartner} from '@/orm/partner';
 import {manager} from '@/lib/core/tenant';
-import {t} from '@/lib/core/locale/server';
 
 // ---- LOCAL IMPORTS ---- //
 import Content from './content';
 import {findAvailableSubapps, findMembers} from '../../common/orm/members';
 import {findInvites} from '../../common/orm/invites';
-import {SectionHeader} from '../../common/ui/components';
 
 export default async function Page(props: {
   params: Promise<{workspace: string; tenant: string}>;
@@ -71,22 +69,11 @@ export default async function Page(props: {
   const $members = [...members?.partners, ...members?.contacts];
 
   return (
-    <div className="flex flex-col gap-6">
-      <SectionHeader
-        eyebrow={await t('Team')}
-        title={await t('Members')}
-        description={await t(
-          'Manage who can access this workspace and their roles.',
-        )}
-      />
-      <div className="bg-white border border-ink-100 rounded-xl shadow-xs p-6">
-        <Content
-          members={$members}
-          invites={invites}
-          availableApps={availableApps || []}
-          canInviteMembers={workspace?.config?.canInviteMembers}
-        />
-      </div>
-    </div>
+    <Content
+      members={$members}
+      invites={invites}
+      availableApps={availableApps || []}
+      canInviteMembers={Boolean(workspace?.config?.canInviteMembers)}
+    />
   );
 }
