@@ -12,6 +12,7 @@ import {t} from '@/locale/server';
 
 // ---- LOCAL IMPORTS ---- //
 import MobileMenuCategory from '@/subapps/news/mobile-menu-category';
+import {NewsTopNav} from '@/subapps/news/common/ui/components';
 import {findCategories} from '@/subapps/news/common/orm/news';
 
 export default async function Layout(props: {
@@ -61,9 +62,16 @@ export default async function Layout(props: {
     user,
   }).then(clone);
 
+  const topCategories = (allCategories as any[])
+    .filter(c => !c?.parentCategory?.id)
+    .map(c => ({id: c.id, name: c.name, slug: c.slug}));
+
   return (
-    <div className="mb-4 md:mb-10 h-full">
-      {children}
+    <div className="h-full flex flex-col">
+      <div className="hidden lg:block">
+        <NewsTopNav categories={topCategories} />
+      </div>
+      <div className="flex-1 mb-4 md:mb-10">{children}</div>
       <MobileMenuCategory categories={allCategories} />
     </div>
   );

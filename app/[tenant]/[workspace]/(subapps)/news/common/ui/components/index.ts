@@ -10,6 +10,9 @@ export {SearchItem} from './search-item';
 export {Breadcrumbs, BreadcrumbsSkeleton} from './breadcrumbs';
 export {AttachmentList, AttachmentListSkeleton} from './attachment-list';
 export {Hero} from './hero';
+export {NewsV2Editorial} from './news-v2-editorial';
+export {NewsTopNav} from './news-top-nav';
+export {NewsArticleHeroV2, NewsArticleBodyV2} from './news-article-v2';
 export {
   ArticleSkeleton,
   CategoryHomeSkeleton,
