@@ -254,107 +254,118 @@ export function InviteMemberModal({
             </Field>
           </div>
 
-          {/* Permissions matrix */}
-          <div>
-            <div className="flex items-center justify-between mb-2.5">
-              <div>
-                <h4 className="text-sm font-bold text-ink-900 mb-0">
-                  {i18n.t('Application access')}
-                </h4>
-                <p className="text-xs text-ink-500 mb-0">
-                  {i18n.t('{0} application(s) enabled', String(enabledCount))}
-                </p>
+          {/* Permissions matrix — only for the "user" role; admins get all apps by default */}
+          {role === Role.user ? (
+            <div>
+              <div className="flex items-center justify-between mb-2.5">
+                <div>
+                  <h4 className="text-sm font-bold text-ink-900 mb-0">
+                    {i18n.t('Application access')}
+                  </h4>
+                  <p className="text-xs text-ink-500 mb-0">
+                    {i18n.t('{0} application(s) enabled', String(enabledCount))}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleAll}
+                  className="text-[12.5px] font-bold text-royal">
+                  {allOn ? i18n.t('Disable all') : i18n.t('Enable all')}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={toggleAll}
-                className="text-[12.5px] font-bold text-royal">
-                {allOn ? i18n.t('Disable all') : i18n.t('Enable all')}
-              </button>
-            </div>
 
-            <div className="border border-ink-100 rounded-xl overflow-hidden">
-              <div className="grid grid-cols-[1fr_96px_150px] gap-2.5 px-3.5 py-2.5 bg-ink-25 border-b border-ink-100">
-                {[
-                  i18n.t('Application'),
-                  i18n.t('Access'),
-                  i18n.t('Authorization'),
-                ].map(h => (
-                  <span
-                    key={h}
-                    className="text-[10.5px] font-bold uppercase tracking-[0.05em] text-ink-500">
-                    {h}
-                  </span>
-                ))}
-              </div>
-              {availableApps.map((a, i) => {
-                const on = perms[a.code]?.access;
-                return (
-                  <div
-                    key={a.code}
-                    className={cn(
-                      'grid grid-cols-[1fr_96px_150px] gap-2.5 items-center px-3.5 py-2.5',
-                      i < availableApps.length - 1 && 'border-b border-ink-100',
-                      on ? 'bg-white' : 'bg-ink-25',
-                    )}>
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span
-                        className={cn(
-                          'w-[30px] h-[30px] rounded-[7px] grid place-items-center shrink-0',
-                          on
-                            ? 'bg-royal-pale text-royal'
-                            : 'bg-ink-100 text-ink-400',
-                        )}>
-                        <MdApps className="size-[15px]" />
-                      </span>
-                      <span
-                        className={cn(
-                          'text-[13px] font-semibold truncate',
-                          on ? 'text-ink-900' : 'text-ink-500',
-                        )}>
-                        {i18n.t(a.name)}
-                      </span>
-                    </div>
-                    <AccountToggle
-                      checked={on}
-                      onCheckedChange={v => setAccess(a.code, v)}
-                      aria-label={a.name}
-                    />
-                    {a.authorization ? (
-                      <div
-                        className={cn(!on && 'opacity-40 pointer-events-none')}>
-                        <Select
-                          value={perms[a.code]?.level}
-                          onValueChange={v =>
-                            setLevel(a.code, v as Authorization)
-                          }
-                          disabled={!on}>
-                          <SelectTrigger className="h-9 text-[12.5px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={Authorization.restricted}>
-                              {i18n.t('Restricted')}
-                            </SelectItem>
-                            <SelectItem value={Authorization.total}>
-                              {i18n.t('Full')}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+              <div className="border border-ink-100 rounded-xl overflow-hidden">
+                <div className="grid grid-cols-[1fr_96px_150px] gap-2.5 px-3.5 py-2.5 bg-ink-25 border-b border-ink-100">
+                  {[
+                    i18n.t('Application'),
+                    i18n.t('Access'),
+                    i18n.t('Authorization'),
+                  ].map(h => (
+                    <span
+                      key={h}
+                      className="text-[10.5px] font-bold uppercase tracking-[0.05em] text-ink-500">
+                      {h}
+                    </span>
+                  ))}
+                </div>
+                {availableApps.map((a, i) => {
+                  const on = perms[a.code]?.access;
+                  return (
+                    <div
+                      key={a.code}
+                      className={cn(
+                        'grid grid-cols-[1fr_96px_150px] gap-2.5 items-center px-3.5 py-2.5',
+                        i < availableApps.length - 1 &&
+                          'border-b border-ink-100',
+                        on ? 'bg-white' : 'bg-ink-25',
+                      )}>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span
+                          className={cn(
+                            'w-[30px] h-[30px] rounded-[7px] grid place-items-center shrink-0',
+                            on
+                              ? 'bg-royal-pale text-royal'
+                              : 'bg-ink-100 text-ink-400',
+                          )}>
+                          <MdApps className="size-[15px]" />
+                        </span>
+                        <span
+                          className={cn(
+                            'text-[13px] font-semibold truncate',
+                            on ? 'text-ink-900' : 'text-ink-500',
+                          )}>
+                          {i18n.t(a.name)}
+                        </span>
                       </div>
-                    ) : (
-                      <span className="text-[11.5px] text-ink-400">—</span>
-                    )}
-                  </div>
-                );
-              })}
+                      <AccountToggle
+                        checked={on}
+                        onCheckedChange={v => setAccess(a.code, v)}
+                        aria-label={a.name}
+                      />
+                      {a.authorization ? (
+                        <div
+                          className={cn(
+                            !on && 'opacity-40 pointer-events-none',
+                          )}>
+                          <Select
+                            value={perms[a.code]?.level}
+                            onValueChange={v =>
+                              setLevel(a.code, v as Authorization)
+                            }
+                            disabled={!on}>
+                            <SelectTrigger className="h-9 text-[12.5px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={Authorization.restricted}>
+                                {i18n.t('Restricted')}
+                              </SelectItem>
+                              <SelectItem value={Authorization.total}>
+                                {i18n.t('Full')}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      ) : (
+                        <span className="text-[11.5px] text-ink-400">—</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-2 mx-0.5 text-[11.5px] text-ink-500">
+                {i18n.t(
+                  '"Restricted" limits access to the member\'s own data; "Full" grants access to all company data.',
+                )}
+              </p>
             </div>
-            <p className="mt-2 mx-0.5 text-[11.5px] text-ink-500">
+          ) : (
+            <div className="rounded-xl border border-royal-border bg-royal-pale px-4 py-3.5 text-[13px] text-royal-dark">
               {i18n.t(
-                '"Restricted" limits access to the member\'s own data; "Full" grants access to all company data.',
+                'An administrator has access to all applications by default.',
               )}
-            </p>
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}

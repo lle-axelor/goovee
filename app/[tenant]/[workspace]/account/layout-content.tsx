@@ -54,12 +54,15 @@ export default function LayoutContent({
   }
 
   // Grouped lateral rail + capped content pane.
+  // The portal window-scrolls (html/body aren't viewport-bounded), so the rail
+  // is sticky. It pins at top-16 (just below the 64px global header) from the
+  // first scrolled pixel — no glide, whether or not the header is fixed.
   return (
-    <div className="bg-ink-25 min-h-full flex flex-col lg:flex-row lg:items-stretch">
-      <div className="lg:sticky lg:top-0 lg:self-start p-4 lg:p-6">
+    <div className="bg-ink-25 min-h-full flex flex-col lg:flex-row lg:items-start">
+      <div className="shrink-0 p-4 lg:p-6 lg:sticky lg:top-16 lg:self-start">
         <Menubar isAdmin={isAdmin} companyName={companyName} role={role} />
       </div>
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 min-w-0">
         <div className="mx-auto w-full max-w-[820px] px-4 pb-16 pt-2 lg:px-6 lg:pt-6">
           {children}
         </div>

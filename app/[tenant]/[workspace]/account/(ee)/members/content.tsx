@@ -97,6 +97,8 @@ export default function Content({
               : Role.user;
           const accessCount =
             m.contactWorkspaceConfig?.contactAppPermissionList?.length ?? 0;
+          // Owners and admins have full access by role — not editable per app.
+          const fullAccess = isOwner || Boolean(isAdmin);
 
           return (
             <div
@@ -130,13 +132,13 @@ export default function Content({
               </span>
 
               <span className="text-[12.5px] text-ink-600">
-                {isOwner
+                {fullAccess
                   ? i18n.t('All apps')
                   : `${accessCount} / ${availableApps.length} ${i18n.t('apps')}`}
               </span>
 
               <div className="justify-self-end">
-                {isOwner ? (
+                {fullAccess ? (
                   <span className="text-ink-300 text-sm">—</span>
                 ) : (
                   <button
