@@ -34,6 +34,7 @@ import {getStoragePath} from '@/storage/index';
 //----LOCAL IMPORTS -----//
 import {
   findGroupById,
+  findGroups,
   findGroupsByMembers,
   findMemberGroupById,
   findPosts,
@@ -879,6 +880,53 @@ export async function fetchGroupsByMembers({
     client,
     user,
   });
+}
+
+export async function findSearchPosts({workspaceURL}: {workspaceURL: string}) {
+  const session = await getSession();
+  const user = session?.user;
+
+  const tenantId = (await headers()).get(TENANT_HEADER);
+  if (!tenantId) return {error: true, message: await t('Bad request')};
+
+  const tenant = await manager.getTenant(tenantId);
+  if (!tenant) return {error: true, message: await t('Invalid tenant')};
+  const {client} = tenant;
+
+  const subapp = await findSubappAccess({
+    code: SUBAPP_CODES.forum,
+    user,
+    url: workspaceURL,
+    client,
+  });
+  if (!subapp) return {error: true, message: await t('Unauthorized')};
+
+  const workspace = await findWorkspace({user, url: workspaceURL, client});
+  if (!workspace) return {error: true, message: await t('Invalid workspace')};
+
+  const groups = await findGroups({workspace, client, user}).then(clone);
+  const groupIDs = groups.map((g: any) => g.id);
+
+  const memberGroups: any = user?.id
+    ? await findGroupsByMembers({
+        id: user.id,
+        workspaceID: workspace.id!,
+        client,
+        user,
+      })
+    : [];
+  const memberGroupIDs = memberGroups.map((g: any) => g?.forumGroup?.id);
+
+  const {posts = []} = await findPosts({
+    workspaceID: workspace.id!,
+    groupIDs,
+    memberGroupIDs,
+    client,
+    user,
+    limit: 50,
+  }).then(clone);
+
+  return posts;
 }
 
 export const createComment: CreateComment = async formData => {

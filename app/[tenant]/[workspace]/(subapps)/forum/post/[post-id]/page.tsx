@@ -7,25 +7,25 @@ import {findWorkspace} from '@/orm/workspace';
 import {User} from '@/types';
 import {clone} from '@/utils';
 import {workspacePathname} from '@/utils/workspace';
-import {DEFAULT_LIMIT, SUBAPP_CODES} from '@/constants';
+import {SUBAPP_CODES} from '@/constants';
 
 // ---- LOCAL IMPORTS ---- //
 import {GROUPS_ORDER_BY} from '@/subapps/forum/common/constants';
 import {
   findCommentCounts,
-  findGroupById,
   findGroupMeta,
   findGroupsByMembers,
-  findPostsByGroupId,
+  findPosts,
+  findRecentlyActivePosts,
+  findUser,
 } from '@/subapps/forum/common/orm/forum';
-import {ForumV2Group} from '@/subapps/forum/common/ui/components';
+import {ForumV2Detail} from '@/subapps/forum/common/ui/components';
 
 export default async function Page(props: {
-  params: Promise<{id: string; tenant: string; workspace: string}>;
-  searchParams: Promise<{[key: string]: string | undefined}>;
+  params: Promise<{tenant: string; workspace: string; 'post-id': string}>;
 }) {
   const params = await props.params;
-  const searchParams = await props.searchParams;
+  const postId = params['post-id'];
 
   const session = await getSession();
   const user = session?.user as User;
@@ -48,16 +48,6 @@ export default async function Page(props: {
   }).then(clone);
   if (!workspace) return notFound();
 
-  const groupId = params.id;
-
-  const group: any = await findGroupById(
-    groupId,
-    workspace?.id!,
-    client,
-    user,
-  ).then(clone);
-  if (!group) return notFound();
-
   const memberGroups: any = userId
     ? await findGroupsByMembers({
         id: userId,
@@ -68,44 +58,58 @@ export default async function Page(props: {
       })
     : [];
   const memberGroupIDs = memberGroups.map((g: any) => g?.forumGroup?.id);
-  const memberRecord = memberGroups.find(
-    (g: any) => String(g?.forumGroup?.id) === String(groupId),
-  );
 
-  const groupMeta = await findGroupMeta({groupId, client});
-
-  const {posts = []} = await findPostsByGroupId({
-    id: groupId,
+  const {posts = []} = await findPosts({
+    ids: [postId],
+    limit: 1,
     workspaceID: workspace?.id!,
-    sort: searchParams?.sort,
-    search: searchParams?.search,
-    limit: searchParams?.limit ? Number(searchParams.limit) : DEFAULT_LIMIT,
     client,
     user,
     memberGroupIDs,
   }).then(clone);
 
-  const replyCounts = await findCommentCounts({
-    postIds: posts.map((p: any) => p.id),
+  const post = posts?.[0];
+  if (!post) return notFound();
+
+  const [groupMeta, recent, $user] = await Promise.all([
+    findGroupMeta({groupId: post.forumGroup?.id, client}),
+    findRecentlyActivePosts({
+      workspaceID: workspace?.id!,
+      client,
+      user,
+      limit: 5,
+    }).then(clone),
+    findUser({userId, client}).then(clone),
+  ]);
+
+  const related = (recent as any[]).filter(
+    r => String(r.id) !== String(postId),
+  );
+  const relatedCounts = await findCommentCounts({
+    postIds: related.map(r => r.id),
     client,
   });
-  const postsWithCounts = posts.map((p: any) => ({
-    ...p,
-    replyCount: replyCounts[String(p.id)] ?? 0,
+  const relatedWithCounts = related.map(r => ({
+    ...r,
+    replyCount: relatedCounts[String(r.id)] ?? 0,
   }));
+
+  const replyCount =
+    (await findCommentCounts({postIds: [postId], client}))[String(postId)] ?? 0;
 
   const forumBase = `${workspaceURI}/${SUBAPP_CODES.forum}`;
 
   return (
-    <ForumV2Group
-      group={{id: group.id, name: group.name}}
+    <ForumV2Detail
+      post={post}
+      replyCount={replyCount}
       groupMeta={groupMeta}
-      posts={postsWithCounts}
-      isMember={Boolean(memberRecord)}
-      memberRecordId={memberRecord?.id}
-      userId={userId}
-      groups={memberGroups.map((g: any) => g.forumGroup)}
-      canPost={Boolean(memberRecord)}
+      related={relatedWithCounts}
+      currentUser={{
+        name: user?.name ?? (user as any)?.simpleFullName,
+        pictureId: ($user as any)?.picture?.id,
+      }}
+      canComment={Boolean(post.isMember)}
       backHref={forumBase}
     />
   );
