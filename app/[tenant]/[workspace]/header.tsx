@@ -5,7 +5,7 @@ import type {Cloned} from '@/types/util';
 import Link from 'next/link';
 import Image from 'next/image';
 import {useRouter, usePathname, useSearchParams} from 'next/navigation';
-import {MdSearch, MdExpandMore} from 'react-icons/md';
+import {MdExpandMore} from 'react-icons/md';
 import {authClient} from '@/lib/auth-client';
 import {useSignOut} from '@/ui/hooks';
 import {getLoginURL} from '@/utils/url';
@@ -70,38 +70,6 @@ function Logo({
         </div>
       </div>
     </Link>
-  );
-}
-
-function GlobalSearch() {
-  return (
-    <div
-      className={cn(
-        'hidden md:flex items-center gap-2 w-[280px]',
-        'px-3 py-2 rounded-lg',
-        'bg-[#f1f5fb] border border-royal-border',
-        'focus-within:border-royal focus-within:shadow-[0_0_0_3px_rgba(21,84,181,0.12)]',
-        'transition-colors',
-      )}>
-      <MdSearch className="text-royal text-[15px] shrink-0" />
-      <input
-        type="search"
-        placeholder={i18n.t('Rechercher dans Goovee…')}
-        className={cn(
-          'flex-1 bg-transparent border-0 outline-none',
-          'text-[13px] text-ink-800 placeholder:text-ink-400',
-          'min-w-0',
-        )}
-      />
-      <kbd
-        className={cn(
-          'shrink-0 text-[11px] font-semibold font-mono',
-          'px-1.5 py-0.5 rounded',
-          'bg-[#e3ecf8] text-[#3d5a87]',
-        )}>
-        ⌘K
-      </kbd>
-    </div>
   );
 }
 
@@ -244,8 +212,6 @@ export default function Header({
         <Logo workspace={workspace} />
 
         <div className="grow" />
-
-        {isLarge && user && <GlobalSearch />}
 
         {isLarge && (
           <div className="flex items-center gap-2">
