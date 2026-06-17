@@ -2,9 +2,6 @@
 
 import {MdOutlineForum} from 'react-icons/md';
 
-// ---- CORE IMPORTS ---- //
-import {formatRelativeTime} from '@/locale/formatters';
-
 function highlight(text: string, query?: string) {
   const t = text || '';
   const q = (query || '').trim();
@@ -31,31 +28,16 @@ export function SearchItem({
   onClick: (result: {id: string; title: string}) => void;
   query?: string;
 }) {
-  const {title, forumGroup, postDateT, createdOn} = result;
-  const date = postDateT || createdOn;
+  const {title} = result;
 
   return (
     <div
-      className="flex items-center gap-3 cursor-pointer"
+      className="flex items-center gap-2.5 cursor-pointer py-0.5"
       onClick={() => onClick(result)}>
-      <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-royal-pale text-royal">
-        <MdOutlineForum className="size-4" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[13px] font-semibold text-ink-900 leading-snug line-clamp-2">
-          {highlight(title, query)}
-        </div>
-        {date && (
-          <div className="text-[11px] text-ink-400 mt-0.5">
-            {formatRelativeTime(date)}
-          </div>
-        )}
-      </div>
-      {forumGroup?.name && (
-        <span className="shrink-0 px-2 py-0.5 rounded-md bg-royal-pale text-royal-dark text-[10px] font-bold">
-          {forumGroup.name}
-        </span>
-      )}
+      <MdOutlineForum className="size-4 shrink-0 text-royal" />
+      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink-800">
+        {highlight(title, query)}
+      </span>
     </div>
   );
 }
