@@ -1,5 +1,4 @@
 import {notFound} from 'next/navigation';
-import {Suspense} from 'react';
 
 // ---- CORE IMPORTS ---- //
 import {getSession} from '@/auth';
@@ -8,27 +7,23 @@ import {findWorkspace} from '@/orm/workspace';
 import {User} from '@/types';
 import {clone} from '@/utils';
 import {workspacePathname} from '@/utils/workspace';
+import {DEFAULT_LIMIT} from '@/constants';
 
 // ---- LOCAL IMPORTS ---- //
+import {GROUPS_ORDER_BY} from '@/subapps/forum/common/constants';
 import {
-  FORUM_CONTENT,
-  GROUPS_ORDER_BY,
-  MENU,
-} from '@/subapps/forum/common/constants';
-import {
+  findCommentCounts,
   findGroups,
   findGroupsByMembers,
+  findPosts,
+  findRecentlyActivePosts,
   findUser,
 } from '@/subapps/forum/common/orm/forum';
 import {
-  NavMenu,
-  Tabs,
-  Hero,
+  ForumFeed,
+  ForumSidebar,
   GroupControls,
-  ThreadListSkeleton,
 } from '@/subapps/forum/common/ui/components';
-import {ComposePost} from '@/subapps/forum/common/ui/components';
-import {PostsContent} from './post-content';
 
 export default async function Page(props: {
   params: Promise<{type: string; tenant: string; workspace: string}>;
@@ -40,7 +35,6 @@ export default async function Page(props: {
   const session = await getSession();
   const user = session?.user as User;
   const userId = user?.id as string;
-  const type = searchParams?.type || FORUM_CONTENT.POSTS;
 
   const {workspaceURL, tenant: tenantId} = workspacePathname(params);
 
@@ -58,12 +52,9 @@ export default async function Page(props: {
     return notFound();
   }
 
-  const groups = await findGroups({
-    workspace: workspace!,
-    client,
-    user,
-  }).then(clone);
-
+  const groups = await findGroups({workspace: workspace!, client, user}).then(
+    clone,
+  );
   const groupIDs = groups.map((group: any) => group.id);
 
   const memberGroups: any = userId
@@ -75,51 +66,70 @@ export default async function Page(props: {
         user,
       })
     : [];
-
   const memberGroupIDs = memberGroups.map(
     (group: any) => group?.forumGroup?.id,
   );
+  const nonMemberGroups: any = groups.filter(
+    (group: any) => !memberGroupIDs.includes(group.id),
+  );
 
-  const nonMemberGroups: any = groups.filter((group: any) => {
-    return !memberGroupIDs.includes(group.id);
-  });
+  const $user = (await findUser({userId, client}).then(clone)) as User;
 
-  const $user = (await findUser({
-    userId,
+  const {posts = [], pageInfo} = await findPosts({
+    sort: searchParams?.sort,
+    search: searchParams?.search,
+    limit: searchParams?.limit ? Number(searchParams.limit) : DEFAULT_LIMIT,
+    workspaceID: workspace?.id!,
+    groupIDs,
     client,
-  }).then(clone)) as User;
+    user,
+    memberGroupIDs,
+  }).then(clone);
+
+  const replyCounts = await findCommentCounts({
+    postIds: posts.map((p: any) => p.id),
+    client,
+  });
+  const postsWithCounts = posts.map((p: any) => ({
+    ...p,
+    replyCount: replyCounts[String(p.id)] ?? 0,
+  }));
+
+  const recent = await findRecentlyActivePosts({
+    workspaceID: workspace?.id!,
+    client,
+    user,
+    limit: 3,
+  }).then(clone);
+
+  const stats = {
+    discussions: (pageInfo as any)?.count ?? posts.length,
+    groups: groups.length,
+    myGroups: memberGroups.length,
+  };
 
   return (
-    <div className="flex flex-col h-full flex-1">
-      <div className="hidden lg:block">{/* <NavMenu items={MENU} /> */}</div>
-      <Hero selectedGroup={null} workspace={workspace} />
-      <div className="container py-6 mx-auto grid grid-cols-1 md:grid-cols-3 gap-5">
-        <GroupControls
-          memberGroups={memberGroups}
-          nonMemberGroups={nonMemberGroups}
-          user={$user}
-          selectedGroup={null}
-        />
-        <div className="col-span-2">
-          <ComposePost
-            user={$user}
+    <div className="bg-ink-25 min-h-full">
+      <div className="container py-8 mx-auto grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start mb-20 lg:mb-0">
+        <div className="min-w-0">
+          <ForumFeed
+            posts={postsWithCounts}
+            groups={memberGroups.map((g: any) => g.forumGroup)}
+            canPost={Boolean($user?.id)}
+          />
+        </div>
+        <aside className="lg:sticky lg:top-6 flex flex-col gap-5">
+          <ForumSidebar
+            stats={stats}
+            trending={(recent as any[]).map(r => ({id: r.id, title: r.title}))}
+          />
+          <GroupControls
             memberGroups={memberGroups}
+            nonMemberGroups={nonMemberGroups}
+            user={$user}
             selectedGroup={null}
           />
-          <Tabs activeTab={type} />
-          <Suspense fallback={<ThreadListSkeleton />}>
-            {type === FORUM_CONTENT.POSTS && (
-              <PostsContent
-                searchParams={searchParams}
-                workspace={workspace}
-                groupIDs={groupIDs}
-                memberGroupIDs={memberGroupIDs}
-                user={user}
-                client={client}
-              />
-            )}
-          </Suspense>
-        </div>
+        </aside>
       </div>
     </div>
   );
