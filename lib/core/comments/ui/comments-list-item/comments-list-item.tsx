@@ -126,11 +126,11 @@ export const CommentListItem = ({
         'transition-colors',
         'duration-500',
         'ease-out',
-        'bg-success-light',
+        'bg-royal-pale',
       );
       element.scrollIntoView({behavior: 'smooth', block: 'center'});
       setTimeout(() => {
-        element.classList.remove('bg-success-light');
+        element.classList.remove('bg-royal-pale');
       }, 1000);
     }
   };
@@ -188,11 +188,11 @@ export const CommentListItem = ({
   };
 
   const renderAvatar = (pictureId: ID, name?: string | null) => (
-    <Avatar className="rounded-full h-6 w-6">
+    <Avatar className="rounded-full h-7 w-7 bg-peach-avatar text-white text-[10px] font-bold overflow-hidden">
       <AvatarImage
         src={getPartnerImageURL(pictureId, tenantId)}
         alt={name ?? ''}
-        size={24}
+        size={28}
       />
     </Avatar>
   );
@@ -207,7 +207,7 @@ export const CommentListItem = ({
       return null;
     }
     return (
-      <div className="p-2 border-l-2 border-success bg-success-light rounded-sm">
+      <div className="p-3 border-l-[3px] border-royal bg-royal-pale rounded-md">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             {subapp === SUBAPP_CODES.forum && partner?.picture
@@ -216,7 +216,7 @@ export const CommentListItem = ({
                   partner.simpleFullName ?? partner.name,
                 )
               : null}
-            <div className="font-semibold text-sm">
+            <div className="font-semibold text-sm text-ink-900">
               {partner
                 ? (partner.simpleFullName ?? partner.name)
                 : createdBy?.fullName}
@@ -229,7 +229,7 @@ export const CommentListItem = ({
               })}
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-ink-500">
             {toggle ? (
               <MdKeyboardArrowUp
                 className="w-4 h-4 cursor-pointer"
@@ -243,21 +243,21 @@ export const CommentListItem = ({
             )}
             {sortBy === SORT_TYPE.old ? (
               <MdNorth
-                className="cursor-pointer"
+                className="w-4 h-4 cursor-pointer"
                 onClick={() => scrollToComment(parentMailMessage?.id)}
               />
             ) : (
               <MdOutlineSouth
-                className="cursor-pointer"
+                className="w-4 h-4 cursor-pointer"
                 onClick={() => scrollToComment(parentMailMessage?.id)}
               />
             )}
           </div>
         </div>
-        <div>
+        <div className="mt-1">
           <InnerHTML
             className={cn(
-              'text-sm w-full font-normal',
+              'text-sm w-full font-normal text-ink-700',
               !toggle && 'line-clamp-1',
             )}
             content={parentCommentToDisplay}
@@ -285,22 +285,29 @@ export const CommentListItem = ({
   if (!comment) return null;
 
   return (
-    <div className="flex flex-col gap-1" key={id} id={`comment-${id}`}>
-      <div className="flex gap-2 justify-between items-center border-b-2 border-dotted">
-        <div className="flex items-center gap-2">
+    <div
+      className={cn(
+        'flex flex-col gap-2 rounded-xl transition-colors',
+        isTopLevel && 'bg-white border border-ink-100 shadow-xs p-4',
+      )}
+      key={id}
+      id={`comment-${id}`}>
+      <div className="flex gap-2 justify-between items-center">
+        <div className="flex items-center gap-2.5">
           {subapp === SUBAPP_CODES.forum && partner?.picture
             ? renderAvatar(
                 partner?.picture?.id,
                 partner.simpleFullName ?? partner.name,
               )
             : null}
-          <div className="font-semibold text-sm leading-[21px] ">
+          <div className="font-semibold text-sm text-ink-900 leading-tight">
             {partner
               ? (partner.simpleFullName ?? partner.name)
               : createdBy?.fullName}
           </div>
+          <span className="text-ink-300">·</span>
           <TooltipComponent
-            triggerText={`${i18n.t('Updated')} ${formatRelativeTime(createdOn!)}`}
+            triggerText={formatRelativeTime(createdOn!)}
             tooltipText={formatDateTime(createdOn!, {
               dateFormat: 'MMMM DD YYYY,',
               timeFormat: ' h:mm a',
@@ -323,7 +330,7 @@ export const CommentListItem = ({
           </div>
         )}
       </div>
-      <div className={`${isTopLevel ? 'ml-3 pl-10' : 'pl-8'}`}>
+      <div className={cn(isTopLevel ? '' : 'pl-10')}>
         {trackingToDisplay && isTrackObject(trackingToDisplay) && (
           <CommentTracks data={trackingToDisplay} />
         )}
@@ -334,45 +341,47 @@ export const CommentListItem = ({
           />
         )}
 
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-2">
           {renderParentMessage()}
           {commentToDisplay && (
             <InnerHTML
-              className="text-sm w-full font-normal"
+              className="text-sm w-full font-normal text-ink-700 leading-relaxed"
               content={commentToDisplay}
             />
           )}
-          <div className="flex items-center gap-6 mt-1 mb-2">
+          <div className="flex items-center gap-4">
             {showReactions && renderReactions()}
             {commentToDisplay && !disableReply && (
-              <div className="flex gap-6 items-center">
-                <div
-                  className="flex items-center gap-1 cursor-pointer"
+              <div className="flex gap-4 items-center">
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-royal hover:underline font-semibold"
                   onClick={toggleCommentInput}>
-                  <MdReply className="w-4 h-4" />
-                  <span className="text-[10px]">{i18n.t('Reply')}</span>
-                </div>
+                  <MdReply className="w-3.5 h-3.5" />
+                  <span className="text-[11px]">{i18n.t('Reply')}</span>
+                </button>
 
                 {parentCommentId === id && !!childMailMessages?.length && (
                   <>
                     <Separator
                       orientation="vertical"
-                      className="h-6 bg-black"
+                      className="h-3 bg-ink-200"
                     />
-                    <div
+                    <button
+                      type="button"
                       className={cn(
-                        'flex items-center gap-1 text-[10px]',
+                        'flex items-center gap-1 text-[11px] font-semibold text-ink-500 hover:text-ink-700',
                         childMailMessages.length && 'cursor-pointer',
                       )}
                       onClick={toggleSubComments}>
-                      <MdOutlineModeComment className="w-4 h-4 cursor-pointer" />
+                      <MdOutlineModeComment className="w-3.5 h-3.5" />
                       {formatNumber(childMailMessages.length)}{' '}
                       {i18n.t(
                         childMailMessages.length > 1
                           ? COMMENTS.toLowerCase()
                           : COMMENT.toLowerCase(),
                       )}
-                    </div>
+                    </button>
                   </>
                 )}
               </div>
@@ -413,9 +422,11 @@ const TooltipComponent = ({
   <TooltipProvider>
     <Tooltip>
       <TooltipTrigger>
-        <div className="text-[10px] leading-3">{triggerText}</div>
+        <div className="text-[11px] text-ink-500 leading-tight">
+          {triggerText}
+        </div>
       </TooltipTrigger>
-      <TooltipContent align="start" className="px-4 py-1 text-[10px]">
+      <TooltipContent align="start" className="px-3 py-1 text-[11px]">
         {tooltipText}
       </TooltipContent>
     </Tooltip>
