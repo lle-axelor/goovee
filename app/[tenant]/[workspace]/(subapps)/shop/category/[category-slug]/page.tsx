@@ -1,38 +1,24 @@
-import {Suspense} from 'react';
 import {notFound, redirect} from 'next/navigation';
 
-// ---- CORE IMPORTS ---- ///
+// ---- CORE IMPORTS ---- //
 import {findWorkspace} from '@/orm/workspace';
 import {clone} from '@/utils';
 import {workspacePathname} from '@/utils/workspace';
 import {getSession} from '@/auth';
-import {DEFAULT_LIMIT} from '@/constants';
-import type {Category} from '@/types';
-import type {PortalAppConfig} from '@/orm/workspace';
 import {manager} from '@/tenant';
 
 // ---- LOCAL IMPORTS ---- //
-import {
-  ProductList,
-  ProductListSkeleton,
-} from '@/subapps/shop/common/ui/components';
-import {findProducts} from '@/subapps/shop/common/orm/product';
-import {shouldHidePricesAndPurchase} from '@/orm/product';
 import {findCategories} from '@/subapps/shop/common/orm/categories';
-import {SORT_BY_OPTIONS} from '@/subapps/shop/common/constants';
-import {getcategoryids} from '@/subapps/shop/common/utils/categories';
 
-async function Category({
-  params,
-  searchParams,
-}: {
-  params: {tenant: string; workspace: string; 'category-slug': string};
-  searchParams: {[key: string]: string | undefined};
+// Legacy route — the standalone category page was removed when the shop
+// switched to the V3 unified catalog with a sidebar filter. We resolve the
+// slug to a category id and redirect into the hub with the right ?cat=.
+export default async function Page(props: {
+  params: Promise<{tenant: string; workspace: string; 'category-slug': string}>;
 }) {
+  const params = await props.params;
   const {tenant: tenantId} = params;
-  const {search, limit, page, sort} = searchParams;
-
-  const categorySlug = params['category-slug'];
+  const slug = params['category-slug'];
 
   const session = await getSession();
   const user = session?.user;
@@ -43,101 +29,16 @@ async function Category({
   if (!tenant) return notFound();
   const {client} = tenant;
 
-  const workspace = await findWorkspace({
-    user,
-    url: workspaceURL,
-    client,
-  }).then(clone);
-
-  if (!workspace) {
-    return notFound();
-  }
-
-  const categories = await findCategories({
-    workspace,
-    client,
-    user,
-  }).then(clone);
-
-  const getbreadcrumbs: any = (category: any) => {
-    if (!category) return [];
-
-    let breadcrumbs: any = [];
-
-    if (category?.parent?.id) {
-      breadcrumbs = [
-        ...getbreadcrumbs(
-          categories.find((c: any) => c.id === category?.parent?.id),
-        ),
-      ];
-    }
-
-    breadcrumbs.push({id: category.id, name: category.name});
-
-    return breadcrumbs;
-  };
-
-  const $category: any = categorySlug
-    ? categories.find((c: any) => c.slug === categorySlug)
-    : null;
-
-  if (!$category) {
-    return redirect(`${workspaceURI}/shop`);
-  }
-
-  const categoryids = $category ? getcategoryids($category) : [];
-
-  const breadcrumbs = $category ? getbreadcrumbs($category) : [];
-
-  const availableSortByOptions = SORT_BY_OPTIONS.filter(
-    o => workspace?.config && (workspace?.config?.[o.value] as boolean),
+  const workspace = await findWorkspace({user, url: workspaceURL, client}).then(
+    clone,
   );
+  if (!workspace) return notFound();
 
-  const defaultSort = availableSortByOptions?.[0]?.value;
-
-  const {products, pageInfo}: any = await findProducts({
-    search,
-    sort: sort || defaultSort,
-    page,
-    limit: limit ? Number(limit) : DEFAULT_LIMIT,
-    categoryids,
-    workspace,
-    user,
-    client,
-  });
-
-  const parentcategories = categories?.filter((c: any) => !c.parent);
-
-  const hidePriceAndPurchase = await shouldHidePricesAndPurchase({
-    user,
-    workspace,
-    client,
-  });
-
-  return (
-    <ProductList
-      products={clone(products)}
-      breadcrumbs={breadcrumbs}
-      category={$category}
-      categories={parentcategories}
-      pageInfo={pageInfo}
-      hidePriceAndPurchase={hidePriceAndPurchase}
-      workspace={workspace}
-      productPath={`${workspaceURI}/shop/category/${$category.slug}/product/`}
-      defaultSort={defaultSort}
-    />
+  const categories = await findCategories({workspace, client, user}).then(
+    clone,
   );
-}
+  const match = (categories as any[])?.find(c => c.slug === slug);
 
-export default async function Page(props: {
-  params: Promise<{tenant: string; workspace: string; 'category-slug': string}>;
-  searchParams: Promise<{[key: string]: string | undefined}>;
-}) {
-  const searchParams = await props.searchParams;
-  const params = await props.params;
-  return (
-    <Suspense fallback={<ProductListSkeleton />}>
-      <Category params={params} searchParams={searchParams} />
-    </Suspense>
-  );
+  if (!match) return redirect(`${workspaceURI}/shop`);
+  return redirect(`${workspaceURI}/shop?cat=${encodeURIComponent(String(match.id))}`);
 }

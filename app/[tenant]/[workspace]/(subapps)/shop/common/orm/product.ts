@@ -110,6 +110,18 @@ const getProductFields = ({
         },
       },
     },
+    productCategory: {
+      id: true,
+      name: true,
+      slug: true,
+    },
+    portalCategorySet: {
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    },
     slug: true,
   }) as const;
 

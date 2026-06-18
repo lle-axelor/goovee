@@ -1,5 +1,6 @@
 import {Suspense} from 'react';
 import {notFound, redirect} from 'next/navigation';
+import type {Metadata} from 'next';
 
 // ---- CORE IMPORTS ---- //
 import {getSession} from '@/auth';
@@ -10,19 +11,18 @@ import {manager} from '@/tenant';
 
 // ---- LOCAL IMPORTS ---- //
 import {
-  ProductView,
-  ProductViewSkeleton,
+  ShopProductDetail,
+  type ShopCategory,
 } from '@/subapps/shop/common/ui/components';
-import {findProductBySlug} from '@/subapps/shop/common/orm/product';
-import {shouldHidePricesAndPurchase} from '@/orm/product';
-import {findCategories} from '@/subapps/shop/common/orm/categories';
-import {findModelFields} from '@/orm/model-fields';
 import {
-  BASE_PRODUCT_MODEL,
-  PRODUCT_ATTRS,
-} from '@/subapps/shop/common/constants';
-import {transformMetaFields} from '@/subapps/shop/common/utils/meta-field-value';
-import {Metadata} from 'next';
+  findProductBySlug,
+  findProducts,
+} from '@/subapps/shop/common/orm/product';
+import {findCategories} from '@/subapps/shop/common/orm/categories';
+import {buildProductDetailLabels} from '@/subapps/shop/common/utils/product-detail-labels';
+
+const CATALOG_LIMIT = 500;
+const RELATED_LIMIT = 4;
 
 export async function generateMetadata(props: {
   params: Promise<{
@@ -34,8 +34,6 @@ export async function generateMetadata(props: {
 }): Promise<Metadata | null> {
   const params = await props.params;
   const {workspaceURL, tenant: tenantId} = workspacePathname(params);
-
-  const categorySlug = params['category-slug'];
   const productSlug = params['product-slug'];
 
   const session = await getSession();
@@ -45,67 +43,41 @@ export async function generateMetadata(props: {
   if (!tenant) return null;
   const {client} = tenant;
 
-  const workspace = await findWorkspace({
-    user: user,
-    url: workspaceURL,
-    client,
-  }).then(clone);
+  const workspace = await findWorkspace({user, url: workspaceURL, client}).then(
+    clone,
+  );
+  if (!workspace) return null;
 
-  if (!workspace) {
-    return null;
-  }
-
-  const categories = await findCategories({
-    workspace,
-    client,
-    user,
-  }).then(clone);
-
-  const $category: any = categories.find((c: any) => c.slug === categorySlug);
-
-  if (!$category) {
-    return null;
-  }
-
-  const computedProduct = await findProductBySlug({
+  const computed = await findProductBySlug({
     slug: productSlug,
     workspace,
     user,
     client,
-    categoryids: $category.id,
   });
-
-  if (!computedProduct?.product) {
-    return null;
-  }
-
-  const {product} = computedProduct;
+  if (!computed?.product) return null;
 
   return {
-    title: product?.name,
-    description: htmlToNormalString(product?.description),
+    title: computed.product?.name,
+    description: htmlToNormalString(computed.product?.description),
   };
 }
 
-async function Product({
+async function Detail({
   params,
 }: {
   params: {
     tenant: string;
     workspace: string;
-    'product-slug': string;
     'category-slug': string;
+    'product-slug': string;
   };
 }) {
   const {tenant: tenantId} = params;
-
-  const categorySlug = params['category-slug'];
-
   const session = await getSession();
   const user = session?.user;
 
   const productSlug = params['product-slug'];
-
+  const categorySlug = params['category-slug'];
   const {workspaceURL, workspaceURI} = workspacePathname(params);
 
   if (!(productSlug && categorySlug)) {
@@ -114,97 +86,98 @@ async function Product({
 
   const tenant = await manager.getTenant(tenantId);
   if (!tenant) return notFound();
-  const {client} = tenant;
+  const {client, config} = tenant;
 
-  const workspace = await findWorkspace({
-    user,
-    url: workspaceURL,
-    client,
-  }).then(clone);
-
-  if (!workspace) {
-    return notFound();
-  }
-
-  const categories = await findCategories({
-    workspace,
-    client,
-    user,
-  }).then(clone);
-
-  const $category: any = categories.find((c: any) => c.slug === categorySlug);
-
-  if (!$category) {
-    return redirect(`${workspaceURI}/shop`);
-  }
-
-  const computedProduct = await findProductBySlug({
-    slug: productSlug,
-    workspace,
-    user,
-    client,
-    categoryids: $category.id,
-  });
-
-  if (!computedProduct) redirect(`${workspaceURI}/shop`);
-
-  const metaFields = await findModelFields({
-    modelName: BASE_PRODUCT_MODEL,
-    modelField: PRODUCT_ATTRS,
-    client,
-  }).then(clone);
-
-  const metaFieldsValues = await transformMetaFields(
-    metaFields,
-    computedProduct?.product?.productAttrs,
-    client,
+  const workspace = await findWorkspace({user, url: workspaceURL, client}).then(
+    clone,
   );
+  if (!workspace) return notFound();
 
-  let breadcrumbs: any = [];
+  const [computed, allCategoriesRaw, allProductsRes, labels] =
+    await Promise.all([
+      findProductBySlug({slug: productSlug, workspace, user, client, config}),
+      findCategories({workspace, client, user}).then(clone),
+      findProducts({
+        workspace,
+        client,
+        user,
+        config,
+        page: 1,
+        limit: CATALOG_LIMIT,
+      }).then(clone),
+      buildProductDetailLabels(),
+    ]);
 
-  const getbreadcrumbs: any = (category: any) => {
-    if (!category) return [];
+  if (!computed?.product) return redirect(`${workspaceURI}/shop`);
 
-    let breadcrumbs: any = [];
+  const allProducts: any[] = Array.isArray(allProductsRes)
+    ? allProductsRes
+    : ((allProductsRes as any)?.products ?? []);
 
-    if (category?.parent?.id) {
-      breadcrumbs = [
-        ...getbreadcrumbs(
-          categories.find((c: any) => c.id === category?.parent?.id),
-        ),
-      ];
+  const categoriesWithProducts = new Set<string>();
+  const countsByCat: Record<string, number> = {};
+  for (const p of allProducts) {
+    const portal = p?.product?.portalCategorySet ?? [];
+    const seen = new Set<string>();
+    for (const c of portal) {
+      const id = String(c?.id ?? '');
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      categoriesWithProducts.add(id);
+      countsByCat[id] = (countsByCat[id] ?? 0) + 1;
     }
-
-    breadcrumbs.push({id: category.id, name: category.name});
-
-    return breadcrumbs;
-  };
-
-  breadcrumbs = $category ? getbreadcrumbs($category) : [];
-
-  const {product} = computedProduct;
-
-  if (breadcrumbs.length) {
-    breadcrumbs.push({id: product.id, name: product.name});
   }
 
-  const parentcategories = categories?.filter((c: any) => !c.parent);
+  const allCategories = (allCategoriesRaw as any[]) ?? [];
+  const categories: ShopCategory[] = allCategories
+    .filter(c => categoriesWithProducts.has(String(c.id)))
+    .map(c => ({id: c.id, name: c.name, slug: c.slug}));
 
-  const hidePriceAndPurchase = await shouldHidePricesAndPurchase({
-    user,
-    workspace,
-    client,
-  });
+  const currentPortalIds: string[] = (
+    computed.product?.portalCategorySet ?? []
+  )
+    .map((c: any) => String(c?.id ?? ''))
+    .filter(Boolean);
+  const related = currentPortalIds.length
+    ? allProducts
+        .filter(p => {
+          if (p?.product?.id === computed.product?.id) return false;
+          const portal = p?.product?.portalCategorySet ?? [];
+          return portal.some((c: any) =>
+            currentPortalIds.includes(String(c?.id)),
+          );
+        })
+        .slice(0, RELATED_LIMIT)
+    : [];
 
   return (
-    <ProductView
-      hidePriceAndPurchase={hidePriceAndPurchase}
-      product={clone(computedProduct)}
-      workspace={workspace}
-      breadcrumbs={breadcrumbs}
-      categories={parentcategories}
-      metaFields={metaFieldsValues}
+    <ShopProductDetail
+      product={clone(computed)}
+      categories={categories}
+      countsByCat={countsByCat}
+      totalCount={allProducts.length}
+      relatedProducts={clone(related)}
+      labels={labels}
     />
+  );
+}
+
+function DetailSkeleton() {
+  return (
+    <div className="flex h-full min-h-[calc(100vh-4rem)] bg-ink-25">
+      <div className="w-[260px] shrink-0 bg-white border-r border-ink-100 px-[18px] py-5" />
+      <div className="flex-1 px-8 py-6">
+        <div className="h-4 w-64 bg-ink-100 rounded mb-4 animate-pulse" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="h-[380px] rounded-[16px] bg-ink-100 animate-pulse" />
+          <div className="flex flex-col gap-4">
+            <div className="h-8 w-3/4 bg-ink-100 rounded animate-pulse" />
+            <div className="h-4 w-1/2 bg-ink-100 rounded animate-pulse" />
+            <div className="h-40 bg-ink-100 rounded-[14px] animate-pulse" />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -215,12 +188,11 @@ export default async function Page(props: {
     'product-slug': string;
     'category-slug': string;
   }>;
-  searchParams: Promise<{[key: string]: string}>;
 }) {
   const params = await props.params;
   return (
-    <Suspense fallback={<ProductViewSkeleton />}>
-      <Product params={params} />
+    <Suspense fallback={<DetailSkeleton />}>
+      <Detail params={params} />
     </Suspense>
   );
 }
