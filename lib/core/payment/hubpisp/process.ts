@@ -58,7 +58,6 @@ export async function applyTransactionStatus({
     case HUBPISP_TRANSACTION_STATUS.RJCT:
       console.warn(`'[HUBPISP][WEBHOOK]' Payment rejected`, {
         contextId: paymentContext.id,
-        transactionStatus,
         statusReasonInformation,
       });
       await markPaymentAsFailed({

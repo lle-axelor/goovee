@@ -30,6 +30,7 @@ export async function POST(
   const {resourceId} = await params;
 
   let linkData: PaymentLinkStatusResult;
+
   try {
     linkData = await fetchPaymentLinkStatus(resourceId);
   } catch (err) {
@@ -38,7 +39,8 @@ export async function POST(
         resourceId,
         body: err.body,
       });
-      // Do NOT fail the webhook — BPCE will retry.
+
+      // Do NOT fail webhook
       return new NextResponse('OK', {status: 200});
     }
 
@@ -128,15 +130,12 @@ export async function POST(
   }
 
   // Persist paymentRequestResourceId so startup polling can resume it after a server restart.
-  const updatedContext = await updatePaymentContextData({
+  await updatePaymentContextData({
     id: paymentContext.id,
     version: paymentContext.version,
     client,
     context: {...paymentContext.data, paymentRequestResourceId},
   });
-
-  paymentContext.version = updatedContext.version;
-  paymentContext.data = {...paymentContext.data, paymentRequestResourceId};
 
   const localInstrument = paymentContext.data?.localInstrument as
     | HubPispLocalInstrument

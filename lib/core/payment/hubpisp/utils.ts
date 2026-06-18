@@ -73,12 +73,8 @@ export function buildParisISOString(timestampMs: number): string {
   );
 }
 
-/**
- * Date header value per HUB PISP v1.5 §5.3.1.1 (generic header):
- * F=YYYY-MM-DDTHH:mm:ss.SSSZ — ISO 8601 in UTC (e.g. 2026-05-29T07:38:34.123Z).
- */
 export function getDateHeader(): string {
-  return new Date().toISOString();
+  return new Date().toUTCString();
 }
 
 export function buildRequestTarget(
