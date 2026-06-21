@@ -1,0 +1,6 @@
+{
+  "title": "Speed up the Events list, detail page and file routes",
+  "type": "change",
+  "description": "Reduced loading times in the Events sub-app. The events list query was reworked to avoid a database join explosion from the privacy filters, the image and comment-attachment routes no longer recompute the full event (removing redundant backend pricing calls per served file), and the event detail page now renders its content immediately while the price loads independently. Existing access and privacy rules are unchanged.",
+  "scope": ["events"]
+}
