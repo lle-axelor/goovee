@@ -1,0 +1,6 @@
+{
+  "title": "Speed up Shop product detail pages, home and product images",
+  "type": "change",
+  "scope": ["shop"],
+  "description": "Reduced loading times in the Shop. Product detail pages no longer run their workspace, category and product queries twice (metadata + render): the workspace lookup is de-duplicated within the request and page metadata uses a lightweight title/description lookup instead of the full product pipeline. The home page now loads its featured categories in parallel, and product images are cached by the browser so they only load once. Existing access and privacy rules are unchanged."
+}

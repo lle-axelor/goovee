@@ -715,6 +715,36 @@ export async function findProductBySlug({
   }).then(({products}) => products?.[0] ?? null);
 }
 
+export async function findProductMetaBySlug({
+  slug,
+  workspace,
+  user,
+  client,
+}: {
+  slug: Product['slug'];
+  workspace: PortalWorkspace | Cloned<PortalWorkspace>;
+  user?: User;
+  client: Client;
+}) {
+  if (!slug || !workspace) {
+    return null;
+  }
+
+  return client.aOSProduct.findOne({
+    where: {
+      slug,
+      AND: [
+        await filterPrivate({client, user}),
+        {OR: [{archived: false}, {archived: null}]},
+      ],
+    },
+    select: {
+      name: true,
+      description: true,
+    },
+  });
+}
+
 type WSProduct = {
   productId: number;
   prices: [{type: 'WT'; price: string}, {type: 'ATI'; price: string}];

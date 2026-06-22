@@ -4,7 +4,7 @@ import {Metadata} from 'next';
 
 // ---- CORE IMPORTS ---- //
 import {getSession} from '@/auth';
-import {findWorkspace} from '@/orm/workspace';
+import {getWorkspace} from '@/orm/workspace';
 import {clone, htmlToNormalString} from '@/utils';
 import {workspacePathname} from '@/utils/workspace';
 import {manager} from '@/tenant';
@@ -16,7 +16,10 @@ import {
   ProductView,
   ProductViewSkeleton,
 } from '@/subapps/shop/common/ui/components';
-import {findProductBySlug} from '@/subapps/shop/common/orm/product';
+import {
+  findProductBySlug,
+  findProductMetaBySlug,
+} from '@/subapps/shop/common/orm/product';
 import {shouldHidePricesAndPurchase} from '@/orm/product';
 import {findCategories} from '@/subapps/shop/common/orm/categories';
 import {getcategoryids} from '@/subapps/shop/common/utils/categories';
@@ -45,33 +48,22 @@ export async function generateMetadata(props: {
   if (!tenant) return null;
   const {client} = tenant;
 
-  const workspace = await findWorkspace({
-    user: user,
-    url: workspaceURL,
-    client,
-  }).then(clone);
+  const workspace = await getWorkspace(workspaceURL, user, client).then(clone);
 
   if (!workspace) {
     return null;
   }
 
-  const categories = await findCategories({workspace, client}).then(clone);
-
-  const categoryids = categories.map(c => getcategoryids(c)).flat();
-
-  const computedProduct = await findProductBySlug({
+  const product = await findProductMetaBySlug({
     slug: productSlug,
     workspace,
     user,
     client,
-    categoryids,
   });
 
-  if (!computedProduct?.product) {
+  if (!product) {
     return null;
   }
-
-  const {product} = computedProduct;
 
   return {
     title: product?.name,
@@ -85,23 +77,20 @@ async function Product({
   params: {tenant: string; workspace: string; 'product-slug': string};
 }) {
   const {tenant: tenantId} = params;
-  const session = await getSession();
-  const user = session?.user;
 
   const productSlug = params['product-slug'];
   const {workspaceURL, workspaceURI} = workspacePathname(params);
 
   if (!productSlug) redirect(`${workspaceURI}/shop`);
 
+  const session = await getSession();
+  const user = session?.user;
+
   const tenant = await manager.getTenant(tenantId);
   if (!tenant) return notFound();
   const {client} = tenant;
 
-  const workspace = await findWorkspace({
-    user: user,
-    url: workspaceURL,
-    client,
-  }).then(clone);
+  const workspace = await getWorkspace(workspaceURL, user, client).then(clone);
 
   if (!workspace) {
     return notFound();
