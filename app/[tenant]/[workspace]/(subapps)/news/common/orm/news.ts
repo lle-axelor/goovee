@@ -1,4 +1,5 @@
 // ---- CORE IMPORTS ---- //
+import {cache} from 'react';
 import type {Client} from '@/goovee/.generated/client';
 import type {Cloned} from '@/types/util';
 import {clone, getPageInfo} from '@/utils';
@@ -57,7 +58,27 @@ const EMPTY_NEWS_RESPONSE: NewsResponse = {
   },
 };
 
-export async function findNonArchivedNewsCategories({
+// Request-scoped memoization: findNonArchivedNewsCategories is called inside
+// every findNews, so a single page (homepage/category) would otherwise run the
+// same category query several times. cache() keys on the (stable) positional
+// args, collapsing them to one DB read per request.
+const getNonArchivedNewsCategories = cache(
+  (
+    workspace: PortalWorkspace | Cloned<PortalWorkspace>,
+    user: User | undefined,
+    client: Client,
+  ) => loadNonArchivedNewsCategories({workspace, user, client}),
+);
+
+export async function findNonArchivedNewsCategories(args: {
+  workspace: PortalWorkspace | Cloned<PortalWorkspace>;
+  user?: User;
+  client: Client;
+}) {
+  return getNonArchivedNewsCategories(args.workspace, args.user, args.client);
+}
+
+async function loadNonArchivedNewsCategories({
   workspace,
   user,
   client,

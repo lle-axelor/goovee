@@ -1,0 +1,6 @@
+{
+  "title": "Speed up the News pages by deduplicating workspace and category lookups",
+  "type": "change",
+  "scope": ["news"],
+  "description": "Reduced redundant database work on the News pages. The page now reuses the shared workspace lookup (getWorkspace) instead of fetching the workspace again, and the news category lookup — previously repeated for each news block on a homepage or category page — is request-memoized so it runs once per request. Existing access and privacy rules are unchanged."
+}
