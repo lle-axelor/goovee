@@ -1,6 +1,6 @@
 {
-  "title": "Speed up portal-wide workspace lookups",
+  "title": "Speed up portal-wide workspace lookup and access filtering",
   "type": "change",
   "scope": ["core"],
-  "description": "Cross-cutting performance work shared by every sub-app. The workspace lookup (findWorkspace), previously run several times per request (shared layout, page metadata and page render), is now request-memoized through getWorkspace so it hits the database once per request. Existing access and privacy rules are unchanged."
+  "description": "Cross-cutting performance work shared by every sub-app. The workspace lookup (findWorkspace), previously run several times per request (shared layout, page metadata and page render), is now request-memoized through getWorkspace so it hits the database once per request. The privacy access filter (filterPrivate), applied to almost every list query across the portal, now uses a minimal partner lookup instead of loading the full partner record. Existing access and privacy rules are unchanged."
 }

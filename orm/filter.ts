@@ -1,9 +1,16 @@
+import {cache} from 'react';
 import type {Client} from '@/goovee/.generated/client';
 import {AOSPartner} from '@/goovee/.generated/models';
 import type {WhereOptions} from '@goovee/orm';
-import {findPartnerById} from './partner';
-import type {User} from '@/types';
+import type {ID, User} from '@/types';
 import {and, or} from '@/utils/orm';
+
+const getPartnerForFilter = cache((id: ID, client: Client) =>
+  client.aOSPartner.findOne({
+    where: {id},
+    select: {partnerCategory: {id: true}},
+  }),
+);
 
 export type FilterRecord = {
   isPrivate?: boolean | null;
@@ -77,7 +84,7 @@ export const filterPrivate = async (
     return defaultFilter;
   }
 
-  const partner = await findPartnerById(partnerId, client);
+  const partner = await getPartnerForFilter(partnerId, client);
 
   if (!partner) {
     return defaultFilter;
@@ -101,7 +108,7 @@ export const filterPrivate = async (
           {
             partnerSet: {
               id: {
-                in: [partner.id],
+                in: [partnerId],
               },
             },
           },
