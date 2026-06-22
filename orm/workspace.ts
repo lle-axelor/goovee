@@ -1024,7 +1024,7 @@ export async function findWorkspaceApps({
   user?: User;
   client: Client;
 }): Promise<Subapp[]> {
-  const workspace = await findWorkspace({url, user, client});
+  const workspace = await getWorkspace(url ?? '', user, client);
 
   const apps = workspace?.apps;
 
