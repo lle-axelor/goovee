@@ -10,7 +10,7 @@ import {workspacePathname} from '@/utils/workspace';
 import {clone} from '@/utils';
 import {t} from '@/locale/server';
 import {getSession} from '@/auth';
-import {findWorkspace} from '@/orm/workspace';
+import {getWorkspace} from '@/orm/workspace';
 import type {User} from '@/types';
 import {manager} from '@/lib/core/tenant';
 import type {Client} from '@/goovee/.generated/client';
@@ -98,11 +98,7 @@ export default async function Page(props: {
   if (!tenant) return notFound();
   const {client} = tenant;
 
-  const workspace = await findWorkspace({
-    user,
-    url: workspaceURL,
-    client,
-  }).then(clone);
+  const workspace = await getWorkspace(workspaceURL, user, client).then(clone);
 
   if (!workspace) {
     return notFound();

@@ -8,7 +8,7 @@ import {t} from '@/locale/server';
 import {fetchFile} from '@/subapps/resources/common/orm/dms';
 import {clone} from '@/utils';
 import {workspacePathname} from '@/utils/workspace';
-import {findWorkspace} from '@/orm/workspace';
+import {getWorkspace} from '@/orm/workspace';
 import {manager} from '@/lib/core/tenant';
 
 // ---- LOCAL IMPORTS ---- //
@@ -42,11 +42,7 @@ export default async function Page(props: {
   if (!tenant) return notFound();
   const {client} = tenant;
 
-  const workspace = await findWorkspace({
-    user,
-    url: workspaceURL,
-    client,
-  }).then(clone);
+  const workspace = await getWorkspace(workspaceURL, user, client).then(clone);
 
   if (!workspace) {
     return notFound();

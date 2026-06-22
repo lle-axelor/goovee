@@ -1,0 +1,6 @@
+{
+  "title": "Speed up the Resources pages by reusing the shared workspace lookup",
+  "type": "change",
+  "scope": ["resources"],
+  "description": "The Resources (documents) pages — home, folder/file view and categories — now reuse the shared workspace lookup (getWorkspace) instead of fetching the workspace again on each page. The document queries were already lightweight and are unchanged. Existing access and privacy rules are unchanged."
+}

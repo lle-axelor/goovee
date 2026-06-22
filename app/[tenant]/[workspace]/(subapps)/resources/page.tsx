@@ -3,7 +3,7 @@ import {notFound} from 'next/navigation';
 
 // ---- CORE IMPORTS ---- //
 import {clone} from '@/utils';
-import {findWorkspace} from '@/orm/workspace';
+import {getWorkspace} from '@/orm/workspace';
 import {workspacePathname} from '@/utils/workspace';
 import {getSession} from '@/auth';
 import {i18n} from '@/locale';
@@ -74,11 +74,7 @@ export default async function Page(props: {
   if (!tenant) return notFound();
   const {client} = tenant;
 
-  const workspace = await findWorkspace({
-    user,
-    url: workspaceURL,
-    client,
-  }).then(clone);
+  const workspace = await getWorkspace(workspaceURL, user, client).then(clone);
 
   if (!workspace) {
     return notFound();
