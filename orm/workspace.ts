@@ -6,6 +6,7 @@ import {AOSPortalAppConfig} from '@/goovee/.generated/models';
 import {ID, Partner, User} from '@/types';
 import {clone, getPartnerId} from '@/utils';
 import {Payload, SelectOptions} from '@goovee/orm';
+import {LRUCache} from '@/tenant/lru';
 
 export const portalAppConfigFields = {
   name: true,
@@ -353,6 +354,50 @@ type IntermediateWorkspaceConfig = Promise<{
   workspacePermissionConfig: {id: string};
 } | null>;
 
+const CONFIG_CACHE_TTL_MS = 5 * 60 * 1000;
+
+const configCacheByClient = new WeakMap<
+  Client,
+  LRUCache<string, PortalAppConfig>
+>();
+
+function getPortalAppConfigCache(client: Client) {
+  let cache = configCacheByClient.get(client);
+  if (!cache) {
+    cache = new LRUCache<string, PortalAppConfig>(200, CONFIG_CACHE_TTL_MS);
+    configCacheByClient.set(client, cache);
+  }
+  return cache;
+}
+
+async function getPortalAppConfig({
+  client,
+  configId,
+  updatedOn,
+}: {
+  client: Client;
+  configId: ID;
+  updatedOn?: Date | null;
+}): Promise<PortalAppConfig | null> {
+  const cache = getPortalAppConfigCache(client);
+  const key = `${configId}:${updatedOn ? new Date(updatedOn).getTime() : ''}`;
+
+  const cached = cache.get(key);
+  if (cached) {
+    // Hand out a copy, never the cached object itself.
+    return clone(cached) as PortalAppConfig;
+  }
+
+  const config = (await client.aOSPortalAppConfig.findOne({
+    where: {id: configId},
+    select: portalAppConfigFields,
+  })) as PortalAppConfig | null;
+
+  // Store a private copy so the cached entry can never be mutated by a consumer.
+  if (config) cache.put(key, clone(config) as PortalAppConfig);
+  return config;
+}
+
 export async function findPartnerWorkspaceConfig({
   url,
   partnerId,
@@ -364,19 +409,14 @@ export async function findPartnerWorkspaceConfig({
 }): IntermediateWorkspaceConfig {
   if (!(url && partnerId)) return null;
 
+  // Step 1 (per-request): access check + config identity + apps. Light.
   const res = await client.aOSPartner.findOne({
-    where: {
-      id: partnerId,
-    },
+    where: {id: partnerId},
     select: {
       partnerWorkspaceSet: {
-        where: {
-          workspace: {
-            url,
-          },
-        },
+        where: {workspace: {url}},
         select: {
-          portalAppConfig: portalAppConfigFields,
+          portalAppConfig: {id: true, updatedOn: true},
           apps: {
             select: {
               background: true,
@@ -401,14 +441,21 @@ export async function findPartnerWorkspaceConfig({
   }
 
   const partnerWorkspaceConfig = res.partnerWorkspaceSet[0];
-
   if (!partnerWorkspaceConfig) return null;
 
-  const portalAppConfig = partnerWorkspaceConfig?.portalAppConfig;
-  if (!portalAppConfig) return null;
+  const configRef = partnerWorkspaceConfig.portalAppConfig;
+  if (!configRef?.id) return null;
+
+  // Step 2 (cached by config id + updatedOn): the heavy config payload.
+  const config = await getPortalAppConfig({
+    client,
+    configId: configRef.id,
+    updatedOn: configRef.updatedOn,
+  });
+  if (!config) return null;
 
   return {
-    config: portalAppConfig,
+    config,
     apps: partnerWorkspaceConfig?.apps,
     workspacePermissionConfig: {id: partnerWorkspaceConfig.id},
   };
