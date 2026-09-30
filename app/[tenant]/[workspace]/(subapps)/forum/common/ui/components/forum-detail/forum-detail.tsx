@@ -1,18 +1,15 @@
 'use client';
 
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useRef, useState} from 'react';
 import {Link} from '@/ui/components/link';
 import {
   MdArrowBack,
   MdArrowForward,
   MdOutlineForum,
-  MdAutoAwesome,
   MdCheck,
   MdCheckCircle,
   MdOutlineReplay,
   MdReply,
-  MdKeyboardArrowUp,
-  MdKeyboardArrowDown,
   MdAttachFile,
   MdClose,
   MdRefresh,
@@ -42,23 +39,9 @@ import {AttachmentViewer} from '../attachment-viewer';
 import {
   fetchComments,
   createComment,
-  reactionSummary,
-  toggleReaction,
   setBestReply,
   setPostStatus,
 } from '@/subapps/forum/common/action/action';
-import type {
-  ReactionSummaries,
-  ReactionSummary,
-  VoteValue,
-} from '@/subapps/forum/common/orm/reaction';
-
-const EMPTY_SUMMARY: ReactionSummary = {
-  likes: 0,
-  dislikes: 0,
-  score: 0,
-  myVote: null,
-};
 
 type AnyRec = any;
 
@@ -202,10 +185,6 @@ function ForumMessage({
   pictureId,
   tenant,
   body,
-  score,
-  myVote = null,
-  onVote,
-  canVote = false,
   nestedReplies = [],
   canReply = false,
   repliesAvailable = true,
@@ -222,10 +201,6 @@ function ForumMessage({
   pictureId?: string | null;
   tenant: string;
   body?: string | null;
-  score: number;
-  myVote?: VoteValue | null;
-  onVote?: (value: VoteValue) => void;
-  canVote?: boolean;
   nestedReplies?: AnyRec[];
   canReply?: boolean;
   repliesAvailable?: boolean;
@@ -274,39 +249,7 @@ function ForumMessage({
           </span>
         )}
         <div className="flex gap-3.5">
-          {/* Vote rail */}
-          <div className="flex flex-col items-center gap-0.5 shrink-0">
-            <button
-              type="button"
-              aria-label={i18n.t('Upvote')}
-              disabled={!canVote}
-              onClick={() => onVote?.('like')}
-              className={cn(
-                'w-[30px] h-[26px] rounded-md border grid place-items-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed',
-                myVote === 'like'
-                  ? 'border-mint-500 bg-mint-500 text-white'
-                  : 'border-ink-150 bg-white text-mint-500 hover:bg-mint-50',
-              )}>
-              <MdKeyboardArrowUp className="size-4" />
-            </button>
-            <span className="text-sm font-extrabold text-ink-900 tabular-nums">
-              {score}
-            </span>
-            <button
-              type="button"
-              aria-label={i18n.t('Downvote')}
-              disabled={!canVote}
-              onClick={() => onVote?.('dislike')}
-              className={cn(
-                'w-[30px] h-[26px] rounded-md border grid place-items-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed',
-                myVote === 'dislike'
-                  ? 'border-status-cancelled-fg bg-status-cancelled-fg text-white'
-                  : 'border-ink-150 bg-white text-ink-400 hover:bg-ink-25',
-              )}>
-              <MdKeyboardArrowDown className="size-4" />
-            </button>
-          </div>
-
+          {/* MBI: vote rail removed (no likes in the forum) */}
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2.5 mb-2">
@@ -496,73 +439,8 @@ export function ForumDetail({
       `${workspaceURI}/${SUBAPP_CODES.forum}/api/comments/attachments/${post.id}/${fileId}`,
     );
 
-  // ---- Reactions (up/down votes) ----
-  const [reactions, setReactions] = useState<ReactionSummaries>({
-    post: {},
-    comment: {},
-  });
-  // Frozen display order for replies. Computed once the reaction summaries
-  // load and whenever the comment set changes (new reply) — never on a vote,
-  // so voting updates the score number without making the reply jump.
-  const [orderedIds, setOrderedIds] = useState<string[]>([]);
-
-  const commentKey = comments.map((c: AnyRec) => c.id).join(',');
-  useEffect(() => {
-    let active = true;
-    const commentIds = commentKey ? commentKey.split(',') : [];
-    reactionSummary({workspaceURL, postIds: [post.id], commentIds})
-      .then(res => {
-        if (!active) return;
-        const summaries = res as ReactionSummaries;
-        setReactions(summaries);
-        // "Most helpful" order, frozen at this point.
-        setOrderedIds(
-          [...comments]
-            .sort(
-              (a: AnyRec, b: AnyRec) =>
-                (summaries.comment[String(b.id)]?.score ?? 0) -
-                (summaries.comment[String(a.id)]?.score ?? 0),
-            )
-            .map((c: AnyRec) => String(c.id)),
-        );
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-    // `comments` is intentionally tracked via `commentKey` (its id list) to
-    // avoid refetching/reordering on unrelated re-renders.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [post.id, commentKey, workspaceURL]);
-
-  const postSummary = reactions.post[String(post.id)] ?? EMPTY_SUMMARY;
-
-  // Guard against a double-click firing two concurrent toggleReaction calls for
-  // the same target: both would read "no existing reaction" and create a
-  // duplicate row (score +2 forever).
-  const votingRef = useRef(new Set<string>());
-  const vote = useCallback(
-    async (target: 'post' | 'comment', id: string, value: VoteValue) => {
-      const key = `${target}:${id}`;
-      if (votingRef.current.has(key)) return;
-      votingRef.current.add(key);
-      try {
-        const res = await toggleReaction({workspaceURL, target, id, value});
-        if ('summary' in res && res.summary) {
-          setReactions(prev => ({
-            ...prev,
-            [target]: {
-              ...prev[target],
-              [String(id)]: res.summary as ReactionSummary,
-            },
-          }));
-        }
-      } finally {
-        votingRef.current.delete(key);
-      }
-    },
-    [workspaceURL],
-  );
+  // MBI: reactions (up/down votes) removed from the UI — no vote fetch, replies
+  // keep the order returned by useComments instead of the "most helpful" one.
 
   // ---- Best answer / resolved status ----
   const [bestReplyId, setBestReplyId] = useState<string | null>(
@@ -595,20 +473,6 @@ export function ForumDetail({
       setStatus(res.status);
     }
   }, [workspaceURL, post.id, status]);
-
-  const postVotes = postSummary.score;
-
-  // Render replies in the frozen "most helpful" order. Any reply not yet in
-  // that order (e.g. one just posted, before the summaries refetch) is
-  // appended at the end so nothing disappears.
-  const byId = new Map(comments.map((c: AnyRec) => [String(c.id), c]));
-  const orderedSet = new Set(orderedIds);
-  const sortedComments: AnyRec[] = [
-    ...orderedIds
-      .map(id => byId.get(id))
-      .filter((c): c is AnyRec => Boolean(c)),
-    ...comments.filter((c: AnyRec) => !orderedSet.has(String(c.id))),
-  ];
 
   const pickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const picked = Array.from(e.target.files || []);
@@ -749,10 +613,6 @@ export function ForumDetail({
                     {i18n.t('{0} replies', String(replyTotal))}
                   </span>
                 )}
-                <span className="inline-flex items-center gap-1.5">
-                  <MdAutoAwesome className="size-3.5 text-mint-500" />
-                  {i18n.t('{0} votes', String(postVotes))}
-                </span>
                 {date && <span>· {formatRelativeTime(date)}</span>}
               </div>
             </div>
@@ -764,10 +624,6 @@ export function ForumDetail({
               pictureId={post.author?.picture?.id}
               tenant={tenant}
               body={post.content}
-              score={postSummary.score}
-              myVote={postSummary.myVote}
-              onVote={v => vote('post', String(post.id), v)}
-              canVote={canComment}
               canReply={canWriteComment}
               repliesAvailable={commentsEnabled}
               onReply={text => onCreate({data: {text, attachments: []}})}
@@ -836,17 +692,11 @@ export function ForumDetail({
                     {i18n.t('{0} replies', String(replyTotal))}
                   </h2>
                   <div className="flex-1 h-px bg-ink-100" />
-                  <span className="text-[12px] text-ink-500">
-                    {i18n.t('Sort:')}{' '}
-                    <strong className="text-ink-700">
-                      {i18n.t('Most helpful')}
-                    </strong>
-                  </span>
                 </div>
 
                 {/* Replies */}
                 <div className="flex flex-col gap-3">
-                  {sortedComments.map((c: AnyRec) => {
+                  {comments.map((c: AnyRec) => {
                     const author =
                       c.partner?.simpleFullName ||
                       c.partner?.name ||
@@ -861,16 +711,6 @@ export function ForumDetail({
                         pictureId={c.partner?.picture?.id}
                         tenant={tenant}
                         body={c.note || c.body}
-                        score={
-                          (reactions.comment[String(c.id)] ?? EMPTY_SUMMARY)
-                            .score
-                        }
-                        myVote={
-                          (reactions.comment[String(c.id)] ?? EMPTY_SUMMARY)
-                            .myVote
-                        }
-                        onVote={v => vote('comment', String(c.id), v)}
-                        canVote={canComment}
                         nestedReplies={c.childMailMessages || []}
                         canReply={canWriteComment}
                         onReply={text =>
@@ -1071,7 +911,6 @@ export function ForumDetail({
                     value={String(replyTotal)}
                   />
                 )}
-                <StatRow label={i18n.t('Votes')} value={String(postVotes)} />
                 <StatRow
                   label={i18n.t('Status')}
                   value={

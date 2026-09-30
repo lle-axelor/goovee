@@ -3,12 +3,7 @@
 import {useState, useTransition} from 'react';
 import {Link} from '@/ui/components/link';
 import {useRouter} from 'next/navigation';
-import {
-  MdArrowBack,
-  MdAdd,
-  MdKeyboardArrowUp,
-  MdOutlineForum,
-} from 'react-icons/md';
+import {MdArrowBack, MdAdd, MdOutlineForum} from 'react-icons/md';
 
 // ---- CORE IMPORTS ---- //
 import {i18n} from '@/locale';
@@ -17,7 +12,7 @@ import {formatRelativeTime} from '@/locale/formatters';
 import {getPartnerImageURL} from '@/utils/files';
 import {SUBAPP_CODES} from '@/constants';
 import {useWorkspace} from '@/app/[tenant]/[workspace]/workspace-context';
-import {useSearchParams, useToast} from '@/ui/hooks';
+import {useToast} from '@/ui/hooks';
 import {PageInfo} from '@/types';
 
 // ---- LOCAL IMPORTS ---- //
@@ -28,11 +23,6 @@ import {useInfinitePosts} from '@/subapps/forum/common/ui/hooks/use-infinite-pos
 import {groupColorClass} from '@/subapps/forum/common/utils/group-color';
 
 type AnyRec = any;
-
-const SORTS = [
-  {key: 'new', label: 'Recent'},
-  {key: 'popular', label: 'Popular'},
-];
 
 function stripHtml(html?: string) {
   return (html || '')
@@ -71,7 +61,6 @@ export function ForumGroup({
   backHref: string;
 }) {
   const {workspaceURI, workspaceURL, tenant} = useWorkspace();
-  const {searchParams, update} = useSearchParams();
   const router = useRouter();
   const {toast} = useToast();
   const [, startTransition] = useTransition();
@@ -80,7 +69,7 @@ export function ForumGroup({
   const [pending, setPending] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
 
-  const {posts, scoreByPost, sentinelRef, hasMore} = useInfinitePosts({
+  const {posts, sentinelRef, hasMore} = useInfinitePosts({
     initialPosts,
     pageInfo,
     initialScoreByPost,
@@ -88,7 +77,6 @@ export function ForumGroup({
     memberGroupIDs,
   });
 
-  const activeSort = searchParams.get('sort') || 'new';
   const postBase = `${workspaceURI}/${SUBAPP_CODES.forum}/post`;
   const colorClass = groupColorClass(group.name || '');
   const initial = (group.name || '#').trim().charAt(0).toUpperCase();
@@ -193,31 +181,11 @@ export function ForumGroup({
       </div>
 
       <div className="container mx-auto py-6 mb-20 lg:mb-0">
-        {/* Sort bar */}
+        {/* MBI: sort bar removed — "Popular" dropped, "Recent" is the default */}
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-[16px] font-bold text-ink-900">
             {i18n.t('Discussions')}
           </h2>
-          <div className="flex-1" />
-          {SORTS.map(s => {
-            const active = activeSort === s.key;
-            return (
-              <button
-                key={s.key}
-                type="button"
-                onClick={() =>
-                  update([{key: 'sort', value: s.key}], {scroll: false})
-                }
-                className={cn(
-                  'px-3.5 py-2 rounded-lg text-[12.5px] font-semibold transition-colors',
-                  active
-                    ? 'bg-royal-pale text-royal-dark'
-                    : 'text-ink-600 hover:bg-ink-25',
-                )}>
-                {i18n.t(s.label)}
-              </button>
-            );
-          })}
         </div>
 
         {/* Posts of this group only — no group badge (redundant here) */}
@@ -235,17 +203,8 @@ export function ForumGroup({
                 <Link
                   key={post.id}
                   href={`${postBase}/${post.id}`}
-                  className="group bg-white border border-ink-100 rounded-xl shadow-xs p-[18px] grid grid-cols-[auto_1fr] gap-4 transition-all hover:-translate-y-0.5 hover:shadow-md">
-                  {/* Vote rail (synthetic) */}
-                  <div className="flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-lg bg-ink-25 min-w-[56px] self-start">
-                    <MdKeyboardArrowUp className="size-4 text-mint-500" />
-                    <span className="text-[17px] font-extrabold text-ink-900 tabular-nums">
-                      {scoreByPost[String(post.id)] ?? 0}
-                    </span>
-                    <span className="text-[10px] font-semibold text-ink-500">
-                      {i18n.t('votes')}
-                    </span>
-                  </div>
+                  className="group bg-white border border-ink-100 rounded-xl shadow-xs p-[18px] block transition-all hover:-translate-y-0.5 hover:shadow-md">
+                  {/* MBI: vote rail removed (no likes in the forum) */}
                   <div className="min-w-0">
                     <h3 className="text-[17px] font-bold text-ink-900 leading-snug tracking-[-0.01em]">
                       {post.title}

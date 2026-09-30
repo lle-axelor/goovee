@@ -12,7 +12,6 @@ import {
 
 // ---- CORE IMPORTS ---- //
 import {i18n} from '@/locale';
-import {cn} from '@/utils/css';
 import {formatRelativeTime} from '@/locale/formatters';
 import {getPartnerImageURL} from '@/utils/files';
 import {SUBAPP_CODES} from '@/constants';
@@ -29,11 +28,6 @@ import {findSearchPosts} from '@/subapps/forum/common/action/action';
 import {useInfinitePosts} from '@/subapps/forum/common/ui/hooks/use-infinite-posts';
 
 type Post = any;
-
-const SORTS = [
-  {key: 'new', label: 'Recent'},
-  {key: 'popular', label: 'Popular'},
-];
 
 function stripHtml(html?: string) {
   return (html || '')
@@ -62,7 +56,6 @@ export function ForumFeed({
   const {workspaceURI, workspaceURL, tenant} = useWorkspace();
   const {searchParams, update} = useSearchParams();
   const router = useRouter();
-  const activeSort = searchParams.get('sort') || 'new';
   const activeSearch = searchParams.get('search') ?? '';
   const [composerOpen, setComposerOpen] = useState(false);
 
@@ -104,29 +97,8 @@ export function ForumFeed({
         </div>
       </div>
 
-      {/* Sort bar */}
-      <div className="bg-white border border-ink-100 rounded-xl shadow-xs p-2 flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex gap-1">
-          {SORTS.map(s => {
-            const active = activeSort === s.key;
-            return (
-              <button
-                key={s.key}
-                type="button"
-                onClick={() =>
-                  update([{key: 'sort', value: s.key}], {scroll: false})
-                }
-                className={cn(
-                  'px-3.5 py-2 rounded-lg text-[13px] font-semibold transition-colors',
-                  active
-                    ? 'bg-royal-pale text-royal-dark'
-                    : 'text-ink-600 hover:bg-ink-25',
-                )}>
-                {i18n.t(s.label)}
-              </button>
-            );
-          })}
-        </div>
+      {/* MBI: sort buttons removed — "Popular" dropped, "Recent" is the default */}
+      <div className="bg-white border border-ink-100 rounded-xl shadow-xs p-2 flex items-center justify-end gap-3 flex-wrap">
         <div className="w-full sm:w-[260px] shrink-0">
           <Search
             variant="compact"

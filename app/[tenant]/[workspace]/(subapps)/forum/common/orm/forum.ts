@@ -13,7 +13,6 @@ import {filterPrivate} from '@/orm/filter';
 import {
   addProperties,
   getArchivedFilter,
-  getPopularQuery,
   filterPrivateQuery,
 } from '@/subapps/forum/common/utils';
 import {
@@ -172,23 +171,7 @@ export async function findPosts({
     case SORT_TYPE.old:
       orderBy = {postDateT: ORDER_BY.ASC};
       break;
-    case SORT_TYPE.popular:
-      const query = await getPopularQuery({
-        page,
-        limit,
-        workspaceID,
-        groupIDs,
-        search,
-        client,
-        ids,
-        user,
-        archived,
-        memberGroupIDs,
-      });
-      const {posts, pageInfo} = query;
-
-      return {posts: posts as unknown as PostWithMembership[], pageInfo};
-
+    // MBI: no "popular" sort — an old ?sort=popular URL falls back to recent.
     default:
       orderBy = {postDateT: ORDER_BY.DESC};
   }
