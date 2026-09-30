@@ -68,7 +68,7 @@ export const GROUPS_ORDER_BY = {
 
 export const MAX_IMAGES_BEFORE_OVERLAY = 3;
 
-export const COMMENTS_PER_LOAD = 3;
+export const COMMENTS_PER_LOAD = 10;
 
 export const MAX_FILE_SIZE = 20000000; // 20 MB
 

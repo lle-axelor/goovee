@@ -18,6 +18,7 @@ import {
   findCommentCounts,
   findGroups,
   findGroupsByMembers,
+  findLastReplies,
   findPosts,
   findRecentlyActivePosts,
   findUser,
@@ -125,12 +126,18 @@ export default async function Page(props: {
 
   /* Reply counts are only rendered when the workspace has comments enabled, so
    * skip the count query entirely when it does not. */
-  const replyCounts = commentsEnabled
-    ? await findCommentCounts({postIds: posts.map(p => p.id), client})
-    : {};
+  const postIds = posts.map(p => p.id);
+  const [replyCounts, lastReplies] = commentsEnabled
+    ? await Promise.all([
+        findCommentCounts({postIds, client}),
+        // MBI: preview of the latest reply on each card
+        findLastReplies({postIds, client}),
+      ])
+    : [{}, {}];
   const postsWithCounts = posts.map(p => ({
     ...p,
-    replyCount: replyCounts[String(p.id)] ?? 0,
+    replyCount: (replyCounts as Record<string, number>)[String(p.id)] ?? 0,
+    lastReply: (lastReplies as Record<string, unknown>)[String(p.id)] ?? null,
   }));
 
   const recent = await findRecentlyActivePosts({

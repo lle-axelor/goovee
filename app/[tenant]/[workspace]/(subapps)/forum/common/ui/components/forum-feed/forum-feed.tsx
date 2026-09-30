@@ -24,6 +24,7 @@ import {PageInfo} from '@/types';
 import {UploadPost} from '../upload-post';
 import {SearchItem} from '../search-item';
 import {PostImages} from '../post-images';
+import {LastReplyPreview} from '../last-reply-preview';
 import {findSearchPosts} from '@/subapps/forum/common/action/action';
 import {useInfinitePosts} from '@/subapps/forum/common/ui/hooks/use-infinite-posts';
 
@@ -208,6 +209,7 @@ export function ForumFeed({
                     </>
                   )}
                 </div>
+                {commentsEnabled && <LastReplyPreview reply={post.lastReply} />}
               </Link>
             );
           })}

@@ -18,6 +18,7 @@ import {PageInfo} from '@/types';
 // ---- LOCAL IMPORTS ---- //
 import {UploadPost} from '../upload-post';
 import {PostImages} from '../post-images';
+import {LastReplyPreview} from '../last-reply-preview';
 import {exitGroup, joinGroup} from '@/subapps/forum/common/action/action';
 import {useInfinitePosts} from '@/subapps/forum/common/ui/hooks/use-infinite-posts';
 import {groupColorClass} from '@/subapps/forum/common/utils/group-color';
@@ -241,6 +242,9 @@ export function ForumGroup({
                       )}
                       {date && <span>· {formatRelativeTime(date)}</span>}
                     </div>
+                    {commentsEnabled && (
+                      <LastReplyPreview reply={post.lastReply} />
+                    )}
                   </div>
                 </Link>
               );

@@ -205,12 +205,64 @@ export async function findPosts({
     ...(ids?.length ? {id: {in: ids}} : {}),
   };
 
+  /* MBI: the default ("Recent") order of a paginated list is the last activity
+   * of each discussion — its latest reply, or its own date when unanswered —
+   * so a discussion that just got a reply comes back on top. The ORM cannot
+   * order on that, so the matching ids are sorted here and the page is fetched
+   * by id. Single-record lookups (by ids / without limit) are left as they are. */
+  const orderByActivity = sort !== SORT_TYPE.old && !!limit && !ids?.length;
+  let activityPageIds: string[] | null = null;
+  let activityCount = 0;
+
+  if (orderByActivity) {
+    const matching = (await client.aOSPortalForumPost
+      .find({
+        where: combinedWhereClause,
+        select: {postDateT: true, createdOn: true},
+      })
+      .catch(error => {
+        console.error('error >>>', error);
+        return [];
+      })) as unknown as Array<{
+      id: string | number;
+      postDateT?: string | Date | null;
+      createdOn?: string | Date | null;
+    }>;
+
+    const lastReplyDates = await findLastReplyDates({
+      postIds: matching.map(p => p.id),
+      client,
+    });
+    const toTime = (date?: string | Date | null) =>
+      date ? new Date(date).getTime() || 0 : 0;
+    const activityOf = (p: (typeof matching)[number]) =>
+      Math.max(
+        toTime(p.postDateT ?? p.createdOn),
+        toTime(lastReplyDates[String(p.id)]),
+      );
+
+    const sortedIds = [...matching]
+      .sort((a, b) => activityOf(b) - activityOf(a))
+      .map(p => String(p.id));
+    const start = skip ?? 0;
+    activityCount = sortedIds.length;
+    activityPageIds = sortedIds.slice(start, start + limit);
+
+    if (!activityPageIds.length) {
+      return {
+        posts: [],
+        pageInfo: getPageInfo({count: activityCount, page, limit}),
+      };
+    }
+  }
+
   const posts = await client.aOSPortalForumPost
     .find({
-      where: combinedWhereClause,
+      where: activityPageIds
+        ? {...combinedWhereClause, id: {in: activityPageIds}}
+        : combinedWhereClause,
       orderBy,
-      take: limit,
-      ...(skip ? {skip} : {}),
+      ...(activityPageIds ? {} : {take: limit, ...(skip ? {skip} : {})}),
       select: {
         title: true,
         forumGroup: {
@@ -252,10 +304,17 @@ export async function findPosts({
       },
     })
     .then(posts => {
-      const $posts = (posts as unknown as Post[])?.map(post => ({
+      let $posts = (posts as unknown as Post[])?.map(post => ({
         ...post,
         isMember: memberGroupIDs.includes(post.forumGroup?.id ?? ''),
       }));
+      if (activityPageIds) {
+        const rank = new Map(activityPageIds.map((id, i) => [id, i]));
+        $posts = [...$posts].sort(
+          (a, b) =>
+            (rank.get(String(a.id)) ?? 0) - (rank.get(String(b.id)) ?? 0),
+        );
+      }
       return clone($posts) as PostWithMembership[];
     })
     .catch(error => {
@@ -264,7 +323,9 @@ export async function findPosts({
     });
 
   const pageInfo = getPageInfo({
-    count: (posts?.[0] as {_count?: number} | undefined)?._count,
+    count: activityPageIds
+      ? activityCount
+      : (posts?.[0] as {_count?: number} | undefined)?._count,
     page,
     limit,
   });
@@ -565,6 +626,101 @@ export async function findCommentCounts({
   const map: Record<string, number> = {};
   (rows || []).forEach(r => {
     map[String(r.postId)] = Number(r.count) || 0;
+  });
+  return map;
+}
+
+/**
+ * MBI: a reply shown in a discussion — a public, non-archived, non-empty
+ * comment (top-level or nested) on a forum post. Shared by the last-activity
+ * order and the last-reply preview so both agree.
+ */
+const VISIBLE_REPLY_CONDITION = `
+  m.related_model = 'com.axelor.apps.portal.db.ForumPost'
+  AND m.is_public_note IS TRUE
+  AND m.archived IS NOT TRUE
+  AND m.note IS NOT NULL
+  AND m.note <> ''`;
+
+/**
+ * MBI: date of the latest visible reply per post, keyed by post id. Posts
+ * without replies are absent from the map.
+ */
+export async function findLastReplyDates({
+  postIds,
+  client,
+}: {
+  postIds: Array<string | number>;
+  client: Client;
+}): Promise<Record<string, string>> {
+  if (!postIds?.length) return {};
+
+  const rows = (await client
+    .$raw(
+      `
+      SELECT m.related_id AS "postId", MAX(m.created_on) AS "lastReplyDate"
+      FROM mail_message m
+      WHERE ${VISIBLE_REPLY_CONDITION}
+        AND m.related_id = ANY($1)
+      GROUP BY m.related_id
+      `,
+      postIds.map(id => Number(id)),
+    )
+    .catch(() => [])) as Array<{
+    postId: string | number;
+    lastReplyDate: string;
+  }>;
+
+  const map: Record<string, string> = {};
+  (rows || []).forEach(r => {
+    map[String(r.postId)] = r.lastReplyDate;
+  });
+  return map;
+}
+
+export type LastReply = {
+  id: string;
+  note: string;
+  createdOn: string;
+  author: string | null;
+};
+
+/**
+ * MBI: latest visible reply per post (for the preview on discussion cards),
+ * keyed by post id. Posts without replies are absent from the map.
+ */
+export async function findLastReplies({
+  postIds,
+  client,
+}: {
+  postIds: Array<string | number>;
+  client: Client;
+}): Promise<Record<string, LastReply>> {
+  if (!postIds?.length) return {};
+
+  const rows = (await client
+    .$raw(
+      `
+      SELECT DISTINCT ON (m.related_id)
+        m.related_id AS "postId",
+        m.id AS "id",
+        m.note AS "note",
+        m.created_on AS "createdOn",
+        COALESCE(bp.simple_full_name, bp.name, au.full_name) AS "author"
+      FROM mail_message m
+      LEFT JOIN base_partner bp ON m.partner = bp.id
+      LEFT JOIN auth_user au ON m.created_by = au.id
+      WHERE ${VISIBLE_REPLY_CONDITION}
+        AND m.related_id = ANY($1)
+      ORDER BY m.related_id, m.created_on DESC
+      `,
+      postIds.map(id => Number(id)),
+    )
+    .catch(() => [])) as Array<LastReply & {postId: string | number}>;
+
+  const map: Record<string, LastReply> = {};
+  (rows || []).forEach(({postId, ...reply}) => {
+    map[String(postId)] = {...reply, id: String(reply.id)};
   });
   return map;
 }

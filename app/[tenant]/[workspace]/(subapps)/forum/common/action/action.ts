@@ -35,6 +35,7 @@ import {
   findGroupById,
   findGroups,
   findGroupsByMembers,
+  findLastReplies,
   findMemberGroupById,
   findPosts,
 } from '@/subapps/forum/common/orm/forum';
@@ -554,10 +555,14 @@ export async function fetchPosts(input: FetchPostsInput) {
     : false;
 
   const postIds = posts.map(p => p.id);
-  const [replyCounts, reactions] = await Promise.all([
+  const [replyCounts, lastReplies, reactions] = await Promise.all([
     commentsEnabled
       ? findCommentCounts({postIds, client})
       : Promise.resolve<Record<string, number>>({}),
+    // MBI: preview of the latest reply on each card
+    commentsEnabled
+      ? findLastReplies({postIds, client})
+      : Promise.resolve({} as Awaited<ReturnType<typeof findLastReplies>>),
     getReactionSummaries({client, postIds, partnerId: user?.id}),
   ]);
 
@@ -569,6 +574,7 @@ export async function fetchPosts(input: FetchPostsInput) {
   const postsWithCounts = posts.map(p => ({
     ...p,
     replyCount: replyCounts[String(p.id)] ?? 0,
+    lastReply: lastReplies[String(p.id)] ?? null,
   }));
 
   return {posts: postsWithCounts, scoreByPost, pageInfo};

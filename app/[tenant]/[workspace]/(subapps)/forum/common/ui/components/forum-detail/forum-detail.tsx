@@ -36,6 +36,7 @@ import {useToast} from '@/ui/hooks/use-toast';
 // ---- LOCAL IMPORTS ---- //
 import {COMMENTS_PER_LOAD} from '@/subapps/forum/common/constants';
 import {AttachmentViewer} from '../attachment-viewer';
+import {isNewReply, NewReplyBadge} from '../new-reply-badge';
 import {
   fetchComments,
   createComment,
@@ -44,6 +45,14 @@ import {
 } from '@/subapps/forum/common/action/action';
 
 type AnyRec = any;
+
+// MBI: top-level replies are listed newest first, but the answers to a reply
+// stay in chronological order so the sub-thread still reads as a conversation.
+function oldestFirst(replies: AnyRec[] = []): AnyRec[] {
+  return [...replies].sort(
+    (a, b) => new Date(a.createdOn).getTime() - new Date(b.createdOn).getTime(),
+  );
+}
 
 function initialsOf(name?: string | null): string {
   if (!name) return '?';
@@ -164,6 +173,7 @@ function NestedReplyItem({
         {relative && (
           <span className="text-[11px] text-ink-500">· {relative}</span>
         )}
+        {isNewReply(child.createdOn) && <NewReplyBadge />}
       </div>
       <RichTextViewer
         content={body || ''}
@@ -190,6 +200,7 @@ function ForumMessage({
   repliesAvailable = true,
   onReply,
   isOriginal = false,
+  isNew = false,
   isBestAnswer = false,
   canMarkBest = false,
   onMarkBest,
@@ -206,6 +217,7 @@ function ForumMessage({
   repliesAvailable?: boolean;
   onReply?: (text: string) => Promise<void> | void;
   isOriginal?: boolean;
+  isNew?: boolean;
   isBestAnswer?: boolean;
   canMarkBest?: boolean;
   onMarkBest?: () => void;
@@ -262,6 +274,7 @@ function ForumMessage({
                       {i18n.t('Author')}
                     </span>
                   )}
+                  {isNew && <NewReplyBadge />}
                 </div>
                 {meta && (
                   <div className="text-[11.5px] text-ink-500 truncate">
@@ -416,7 +429,9 @@ export function ForumDetail({
 
   const {comments, totalMainThread, hasMore, loadMore, creating, onCreate} =
     useComments({
-      sortBy: SORT_TYPE.old,
+      // MBI: most recent replies first; a reply just posted goes on top.
+      sortBy: SORT_TYPE.new,
+      newCommentOnTop: true,
       recordId: post.id,
       subapp: SUBAPP_CODES.forum,
       limit: COMMENTS_PER_LOAD,
@@ -711,7 +726,8 @@ export function ForumDetail({
                         pictureId={c.partner?.picture?.id}
                         tenant={tenant}
                         body={c.note || c.body}
-                        nestedReplies={c.childMailMessages || []}
+                        isNew={isNewReply(c.createdOn)}
+                        nestedReplies={oldestFirst(c.childMailMessages)}
                         canReply={canWriteComment}
                         onReply={text =>
                           onCreate({
