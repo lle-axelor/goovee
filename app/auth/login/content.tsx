@@ -5,7 +5,6 @@ import {useSearchParams} from 'next/navigation';
 import {authClient} from '@/lib/auth-client';
 import Image from 'next/image';
 import {MdOutlineRefresh, MdArrowForward} from 'react-icons/md';
-import {Dialog, DialogContent, DialogTitle} from '@/ui/components/dialog';
 
 // ---- CORE IMPORTS ---- //
 import {i18n, l10n} from '@/locale';
@@ -47,7 +46,6 @@ export default function Content({
   const searchQuery = new URLSearchParams(searchParams).toString();
   const tenantId = searchParams.get(SEARCH_PARAMS.TENANT_ID);
   const workspaceURI = searchParams.get('workspaceURI');
-  const {isPending} = authClient.useSession();
   const env = useEnvironment();
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,18 +135,10 @@ export default function Content({
     });
   };
 
-  if (isPending) {
-    return (
-      <Dialog open>
-        <DialogTitle></DialogTitle>
-        <DialogContent className="space-y-2" hideClose>
-          <div className="flex items-center justify-center">
-            <MdOutlineRefresh className="h-6 w-6 animate-spin" />
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  /* No gate on the session here. `Locale` above renders nothing until the
+   * session has answered once, so this form is only ever mounted with an answer
+   * already in hand — and covering it with a spinner on every later refetch
+   * would blink over a form the visitor is in the middle of filling. */
 
   const successMessage = searchParams.get('success');
   const showSso = showGoogleOauth || showKeycloakOauth;
