@@ -71,10 +71,18 @@ export const Banner = ({
   background,
   groupImgClassName,
   groupClassName,
+  groupImgSizes = '96px',
+  groupHref,
+  groupAlt = 'Group',
 }: {
   groupImg?: string;
   groupImgClassName?: string;
   groupClassName?: string;
+  /** `sizes` of the group image, for a group image displayed larger than 96px. */
+  groupImgSizes?: string;
+  /** When set, the group image links to this URL (new tab). */
+  groupHref?: string;
+  groupAlt?: string;
   title: string;
   description: string;
   image?: any;
@@ -96,21 +104,36 @@ export const Banner = ({
       />
       <div className={cn(bannerVariants({blendMode, background}))} />
       <div className="relative z-2 px-4 flex text-white items-center flex-col justify-center py-0.5">
-        {groupImg && (
-          <div
-            className={cn(
-              'w-20 h-20 overflow-hidden rounded-lg relative mb-4',
-              groupClassName,
-            )}>
-            <Image
-              fill
-              src={groupImg}
-              alt="Group"
-              className={cn('rounded-lg object-cover', groupImgClassName)}
-              sizes="96px"
-            />
-          </div>
-        )}
+        {groupImg &&
+          (() => {
+            const group = (
+              <div
+                className={cn(
+                  'w-20 h-20 overflow-hidden rounded-lg relative mb-4',
+                  groupClassName,
+                )}>
+                <Image
+                  fill
+                  src={groupImg}
+                  alt={groupAlt}
+                  className={cn('rounded-lg object-cover', groupImgClassName)}
+                  sizes={groupImgSizes}
+                />
+              </div>
+            );
+            return groupHref ? (
+              <a
+                href={groupHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={groupAlt}
+                className="pointer-events-auto">
+                {group}
+              </a>
+            ) : (
+              group
+            );
+          })()}
         <h2 className="lg:text-[32px] text-2xl font-semibold mb-2">{title}</h2>
         <p className="lg:text-lg text-base font-medium md:max-w-screen-sm lg:max-w-screen-md text-center mb-4">
           {description}

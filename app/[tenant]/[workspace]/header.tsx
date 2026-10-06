@@ -30,11 +30,12 @@ import {
   AlertDialogAction,
 } from '@/ui/components';
 import {i18n} from '@/locale';
-import {DEFAULT_LOGO_URL, SUBAPP_PAGE} from '@/constants';
+import {SUBAPP_PAGE} from '@/constants';
 import {useWorkspace} from '@/app/[tenant]/[workspace]/workspace-context';
 import {Icon} from '@/ui/components';
 import type {Workspace} from '@/orm/workspace';
 import type {ShellConfig} from './orm/config';
+import {MBI_MAIN_LOGO, MBI_PARTNER_LOGOS, type MbiLogo} from './mbi-brand';
 import {useNavigationVisibility} from '@/ui/hooks';
 import {useResponsive} from '@/ui/hooks';
 import Cart from '@/app/[tenant]/[workspace]/cart';
@@ -47,34 +48,52 @@ import {toWorkspaceURI} from '@/utils/workspace';
 import {Link} from '@/ui/components/link';
 import {authClient} from '@/lib/auth-client';
 
-function Logo({
-  workspace,
-  config,
+/**
+ * MBI: a logo of the header, linking to the organisation's website in a new
+ * tab. `height` is the displayed height in px; the width follows the image's
+ * aspect ratio (also used as the image size requested from Next).
+ */
+function BrandLogo({
+  logo,
+  height,
+  priority,
 }: {
-  workspace: Workspace | Cloned<Workspace>;
-  config: ShellConfig | Cloned<ShellConfig>;
+  logo: MbiLogo;
+  height: number;
+  priority?: boolean;
 }) {
-  const {workspaceURI} = useWorkspace();
-  const logoId = workspace.logo?.id || config.company?.logo?.id;
-  const logoURL = logoId
-    ? withBasePath(`${workspaceURI}/api/workspace/logo/image`)
-    : withBasePath(DEFAULT_LOGO_URL);
-
   return (
-    <Link href={workspaceURI}>
-      <div className="flex items-center justify-start">
-        <div className="w-24 aspect-[2/1] relative">
-          <Image
-            fill
-            src={logoURL}
-            alt="Logo"
-            className="w-full h-full object-contain"
-            priority
-            sizes="96px"
-          />
-        </div>
-      </div>
-    </Link>
+    <a
+      href={logo.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={logo.name}
+      className="shrink-0 transition-opacity hover:opacity-80">
+      <Image
+        src={withBasePath(logo.src)}
+        alt={logo.name}
+        width={Math.round((height * logo.width) / logo.height)}
+        height={height}
+        priority={priority}
+      />
+    </a>
+  );
+}
+
+// MBI: the four intercommunality logos, side by side.
+function PartnerLogos({
+  height,
+  className,
+}: {
+  height: number;
+  className?: string;
+}) {
+  return (
+    <div className={cn('items-center gap-4', className)}>
+      {MBI_PARTNER_LOGOS.map(logo => (
+        <BrandLogo key={logo.href} logo={logo} height={height} />
+      ))}
+    </div>
   );
 }
 
@@ -256,7 +275,10 @@ export default function Header({
           'h-16 bg-white text-ink-900 px-7 flex items-center gap-4',
           'border-b border-ink-100',
         )}>
-        <Logo workspace={workspace} config={config} />
+        {/* MBI: main logo + the four intercommunalities (second row on mobile) */}
+        <BrandLogo logo={MBI_MAIN_LOGO} height={44} priority />
+        <div className="hidden md:block w-px h-8 bg-ink-100 shrink-0" />
+        <PartnerLogos height={36} className="hidden md:flex" />
 
         <div className="grow" />
 
@@ -312,6 +334,10 @@ export default function Header({
             {!user && <Account baseURL={workspaceURI} tenant={tenant} />}
           </div>
         )}
+      </div>
+
+      <div className="md:hidden flex justify-center px-4 py-2 bg-white border-b border-ink-100">
+        <PartnerLogos height={28} className="flex flex-wrap justify-center" />
       </div>
 
       {showTopNavigation && !loading ? (

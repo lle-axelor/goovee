@@ -5,7 +5,6 @@ import Image from 'next/image';
 
 // ---- CORE IMPORTS ---- //
 import {
-  DEFAULT_LOGO_URL,
   IMAGE_URL,
   NO_IMAGE_URL,
   ORDER_BY,
@@ -28,6 +27,7 @@ import {HeroSearch} from '@/ui/components';
 
 // ---- LOCAL IMPORTS ----//
 import type {ShellConfig} from './orm/config';
+import {MBI_MAIN_LOGO} from './mbi-brand';
 import {EVENT_TYPE} from './(subapps)/events/common/constants';
 import {findEvents} from './(subapps)/events/common/orm/event';
 import {findRecentlyActivePosts} from './(subapps)/forum/common/orm/forum';
@@ -94,10 +94,6 @@ export async function Home({
   const heroImageURL = config.homepageHeroBgImage?.id
     ? withBasePath(`${workspaceURI}/api/home/hero/background`)
     : withBasePath(IMAGE_URL);
-  const logoId = workspace.logo?.id || config.company?.logo?.id;
-  const logoURL = logoId
-    ? withBasePath(`${workspaceURI}/api/workspace/logo/image`)
-    : withBasePath(DEFAULT_LOGO_URL);
 
   return (
     <div className="bg-ink-25 flex flex-col flex-1 min-h-0">
@@ -110,9 +106,13 @@ export async function Home({
           (config.homepageHeroOverlayColorSelect as OverlayColor) || 'default'
         }
         blendMode={config.homepageHeroOverlayColorSelect ? 'overlay' : 'normal'}
-        groupImg={logoURL}
-        groupImgClassName="object-contain"
-        groupClassName="w-24 aspect-[2/1] mb-2"
+        // MBI: the main logo, large, on a white card, linking to LinkedIn
+        groupImg={withBasePath(MBI_MAIN_LOGO.src)}
+        groupHref={MBI_MAIN_LOGO.href}
+        groupAlt={MBI_MAIN_LOGO.name}
+        groupImgClassName="object-contain rounded-none"
+        groupClassName="w-60 lg:w-96 h-auto aspect-[1200/521] bg-white rounded-xl shadow-md mb-4"
+        groupImgSizes="(min-width: 1024px) 384px, 240px"
       />
 
       <div className="max-w-[1280px] w-full mx-auto px-8 py-10">
