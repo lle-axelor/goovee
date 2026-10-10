@@ -26,7 +26,7 @@ export async function findEntry({id, client}: {id: ID; client: Client}) {
     where: and<AOSPartner>([{id}, getCompanyAccessFilter()]),
     select: {
       id: true,
-      portalCompanyName: true,
+      simpleFullName: true,
       directoryCompanyDescription: true,
       picture: {id: true},
       isAddressInDirectory: true,
@@ -92,7 +92,7 @@ export async function findEntries({
       zip && {mainAddress: {zip: {like: `%${zip}%`}}},
       search && {
         OR: [
-          {portalCompanyName: {like: `%${search}%`}},
+          {simpleFullName: {like: `%${search}%`}},
           {directoryCompanyDescription: {like: `%${search}%`}},
         ],
       },
@@ -102,7 +102,7 @@ export async function findEntries({
     ...(skip ? {skip} : {}),
     select: {
       id: true,
-      portalCompanyName: true,
+      simpleFullName: true,
       directoryCompanyDescription: true,
       picture: {id: true},
       isAddressInDirectory: true,

@@ -8,6 +8,7 @@ import type {Entry, ListEntry} from '../../../types';
 import {getPartnerImageURL} from '@/utils/files';
 import {Tenant} from '@/lib/core/tenant';
 import {cn} from '@/utils/css';
+import {getEntryName} from '../../../utils';
 
 export type CardProps = {
   item: ListEntry | Entry | Cloned<Entry> | Cloned<ListEntry>;
@@ -24,6 +25,7 @@ export function Card(props: CardProps) {
   const {item, url, compact, tenant, className} = props;
 
   const Wrapper = url ? Link : 'div';
+  const name = getEntryName(item);
 
   if (compact) {
     const addressText = item.mainAddress?.formattedFullName;
@@ -43,13 +45,11 @@ export function Card(props: CardProps) {
               noimage: true,
               noimageSrc: NO_IMAGE_URL,
             })}
-            alt={item.portalCompanyName ?? 'Company image'}
+            alt={name || 'Company image'}
           />
         </div>
         <div className="flex-1 overflow-hidden">
-          <h4 className="font-semibold text-sm truncate">
-            {item.portalCompanyName}
-          </h4>
+          <h4 className="font-semibold text-sm truncate">{name}</h4>
           {addressText && (
             <p className="text-xs text-muted-foreground truncate !m-0">
               {addressText}
@@ -69,7 +69,7 @@ export function Card(props: CardProps) {
       )}>
       <div className="p-5 sm:p-6 flex-1 min-w-0">
         <h3 className="font-bold text-lg md:text-xl text-ink-900 leading-tight line-clamp-2">
-          {item.portalCompanyName}
+          {name}
         </h3>
         {item.mainAddress?.formattedFullName && (
           <p className="mt-1.5 text-xs uppercase tracking-[0.06em] font-semibold text-ink-400 line-clamp-1">
@@ -92,7 +92,7 @@ export function Card(props: CardProps) {
             noimage: true,
             noimageSrc: NO_IMAGE_URL,
           })}
-          alt={item.portalCompanyName ?? 'Company image'}
+          alt={name || 'Company image'}
         />
       </div>
     </Wrapper>

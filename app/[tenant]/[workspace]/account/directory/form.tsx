@@ -33,6 +33,7 @@ import {
   AlertDialogTitle,
 } from '@/ui/components/alert-dialog';
 import {Button} from '@/ui/components/button';
+import {Input} from '@/ui/components/input';
 import {Form as UIForm} from '@/ui/components/form';
 import {useToast} from '@/ui/hooks';
 import {cn} from '@/utils/css';
@@ -86,6 +87,7 @@ export default function Form({
       companyEmail: companyDataSource?.isEmailInDirectory ?? false,
       companyPhone: companyDataSource?.isPhoneInDirectory ?? false,
       companyWebsite: companyDataSource?.isWebsiteInDirectory ?? false,
+      companyWebsiteUrl: companyDataSource?.webSite ?? '',
       companyAddress: companyDataSource?.isAddressInDirectory ?? false,
       companyDescription: companyDataSource?.directoryCompanyDescription ?? '',
       contactInDirectory: partner.isInDirectory ?? false,
@@ -409,9 +411,32 @@ export default function Form({
                         <div className="text-[13.5px] font-semibold text-ink-900">
                           {f.label}
                         </div>
-                        <div className="text-xs text-ink-500 truncate">
-                          {f.value || i18n.t('Not provided')}
-                        </div>
+                        {f.name === 'companyWebsite' ? (
+                          /* MBI: the website can be entered or changed here */
+                          <div className="mt-1.5">
+                            <Input
+                              {...form.register('companyWebsiteUrl')}
+                              type="text"
+                              inputMode="url"
+                              placeholder="https://www.example.com"
+                              aria-label={f.label}
+                              className="h-9 text-sm"
+                            />
+                            {form.formState.errors.companyWebsiteUrl
+                              ?.message && (
+                              <p className="text-xs text-destructive mt-1 mb-0">
+                                {i18n.t(
+                                  form.formState.errors.companyWebsiteUrl
+                                    .message,
+                                )}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-ink-500 truncate">
+                            {f.value || i18n.t('Not provided')}
+                          </div>
+                        )}
                       </div>
                       <AccountToggle
                         checked={f.checked}

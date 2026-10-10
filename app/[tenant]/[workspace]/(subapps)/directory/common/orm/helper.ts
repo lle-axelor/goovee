@@ -5,7 +5,14 @@ export function getCompanyAccessFilter() {
   return {
     isInDirectory: true,
     isCustomer: true,
-    OR: [{archived: false}, {archived: null}],
+    AND: [
+      {OR: [{archived: false}, {archived: null}]},
+      /* MBI: companies only. A contact created by an invitation is also a
+       * customer (`registerContact`), so once it opts into the directory it
+       * would otherwise be listed as a company of its own; it belongs on its
+       * company's page only (`getContactAccessFilter`). */
+      {OR: [{isContact: false}, {isContact: null}]},
+    ],
   } satisfies WhereOptions<AOSPartner>;
 }
 

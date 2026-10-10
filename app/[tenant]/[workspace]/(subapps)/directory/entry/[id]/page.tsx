@@ -20,6 +20,7 @@ import {civility} from '../../common/constants';
 import {findEntry, findMapConfig} from '../../common/orm';
 import type {Entry} from '../../common/types';
 import {Map} from '../../common/ui/components/map';
+import {getEntryName} from '../../common/utils';
 
 import '@/ui/components/rich-text-editor/rich-text-editor.css';
 export default async function Page(props: {
@@ -117,12 +118,12 @@ async function Details({
     mainAddress,
     emailAddress,
     fixedPhone,
-    portalCompanyName,
     picture,
     webSite,
     directoryCompanyDescription,
     mobilePhone,
   } = entryDetail;
+  const name = getEntryName(entryDetail);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -136,12 +137,12 @@ async function Details({
               noimage: true,
               noimageSrc: NO_IMAGE_URL,
             })}
-            alt={portalCompanyName ?? 'Company Logo'}
+            alt={name || 'Company Logo'}
           />
         </div>
         <div className="flex-1">
           <h1 className="text-3xl font-bold text-ink-900 sm:text-4xl tracking-[-0.01em] leading-tight">
-            {portalCompanyName}
+            {name}
           </h1>
           {mainAddress?.formattedFullName && (
             <p className="mt-2 text-sm text-ink-500">

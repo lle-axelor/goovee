@@ -12,6 +12,7 @@ import {headers} from 'next/headers';
 import {
   DirectorySettingsFormValues,
   directorySettingsSchema,
+  normalizeWebsite,
   updateCompanyProfileImageSchema,
   type UpdateCompanyProfileImageValues,
 } from './schema';
@@ -90,6 +91,10 @@ export async function updateDirectorySettings({
           isEmailInDirectory: data.companyEmail,
           isPhoneInDirectory: data.companyPhone,
           isWebsiteInDirectory: data.companyWebsite,
+          // MBI: the website itself, not only whether it is shown
+          ...(data.companyWebsiteUrl !== undefined && {
+            webSite: normalizeWebsite(data.companyWebsiteUrl),
+          }),
           isAddressInDirectory: data.companyAddress,
           directoryCompanyDescription: data.companyDescription,
         },
