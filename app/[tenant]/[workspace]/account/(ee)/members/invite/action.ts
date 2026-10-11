@@ -19,13 +19,13 @@ import {
 } from '@/orm/partner';
 import {findWorkspace} from '@/orm/workspace';
 import NotificationManager, {NotificationType} from '@/notification';
-import {APP_TITLE, SEARCH_PARAMS} from '@/constants';
+import {SEARCH_PARAMS} from '@/constants';
 import {getPartnerId} from '@/utils';
 import {withBasePath} from '@/lib/core/path/base-path';
 
 // ---- LOCAL IMPORTS ---- //
 import {getAccountConfig} from '../../../common/orm/config';
-import {inviteTemplate} from '../../../common/constants/template';
+import {invitationMail} from '@/lib/mbi/mail';
 import {
   findInviteForEmail,
   createInvite,
@@ -236,7 +236,12 @@ export async function sendInvites(input: SendInvites) {
     };
   }
 
-  function sendMail({email, link, subject}: any) {
+  function sendMail({email, link}: {email: string; link: string}) {
+    // MBI: French mail in the MBI layout when no ERP template is set.
+    const mbiMail = invitationMail({
+      link,
+      inviterName: partner?.simpleFullName,
+    });
     const mailService = NotificationManager.getService(NotificationType.mail);
 
     after(async () => {
@@ -246,7 +251,7 @@ export async function sendInvites(input: SendInvites) {
 
           await mailService?.notify({
             to: email,
-            subject: template?.subject || `Greetings from ${APP_TITLE}`,
+            subject: template?.subject || mbiMail.subject,
             html: replacePlaceholders({
               content: template?.content,
               values: {
@@ -258,13 +263,7 @@ export async function sendInvites(input: SendInvites) {
             }),
           });
         } else {
-          await mailService?.notify(
-            inviteTemplate({
-              subject,
-              email,
-              link,
-            }),
-          );
+          await mailService?.notify({to: email, ...mbiMail});
         }
       } catch (err) {
         console.error('[INVITE] Failed to send invite mail', err);
@@ -341,7 +340,6 @@ export async function sendInvites(input: SendInvites) {
       invitesCount += 1;
 
       sendMail({
-        subject: workspace?.name || workspace.url,
         email,
         link: `${process.env.GOOVEE_PUBLIC_HOST}${withBasePath(
           `/auth/register/invite/${invite.id}/email?${SEARCH_PARAMS.TENANT_ID}=${tenantId}`,

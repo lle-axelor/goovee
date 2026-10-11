@@ -8,7 +8,7 @@ import {
   replacePlaceholders,
 } from '@/orm/email-template';
 import type {Client} from '@/goovee/.generated/client';
-import {APP_TITLE} from '@/constants';
+import {otpMail} from '@/lib/mbi/mail';
 
 // ---- LOCAL IMPORTS ---- //
 import {create} from '../orm';
@@ -20,77 +20,6 @@ function error(message: string) {
     message,
   };
 }
-
-const otpTemplate = ({
-  email,
-  otp,
-  subject,
-}: {
-  email: string;
-  otp: string;
-  subject?: string;
-}) => ({
-  subject: `${APP_TITLE} OTP`,
-  to: email,
-  html: otpTemplateHTML({otp}),
-});
-
-const otpTemplateHTML = ({otp}: {otp: string}) => `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>${APP_TITLE} OTP</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                line-height: 1.6;
-                background-color: #f9f9f9;
-                margin: 0;
-                padding: 20px;
-            }
-            .container {
-                text-align: center;
-                max-width: 600px;
-                margin: 0 auto;
-                background: #ffffff;
-                padding: 20px;
-                border-radius: 8px;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            }
-            .header {
-                margin-bottom: 20px;
-            }
-            .button {
-                display: inline-block;
-                margin: 20px 0;
-                padding: 12px 20px;
-                background-color: #58d59d;
-                color: #ffffff !important;
-                text-decoration: none;
-                border-radius: 5px;
-                font-size: 16px;
-            }
-            .footer {
-                font-size: 14px;
-                color: #666666;
-                margin-top: 20px;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>OTP for ${APP_TITLE}</h1>
-            </div>
-            <p>Your OTP for ${APP_TITLE} is : <strong>${otp}</strong></p>
-            <p>Please don't share your OTP with anyone. OTP is valid for 10 minutes</p>
-            <div class="footer">
-                <p>Best regards,<br>The ${APP_TITLE} Team</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    `;
 
 export async function generateOTP({
   email,
@@ -127,7 +56,8 @@ export async function generateOTP({
 
           await mailService?.notify({
             to: email,
-            subject: template?.subject || `Greetings from ${APP_TITLE}`,
+            subject:
+              template?.subject || otpMail({otp: result.otp, scope}).subject,
             html: replacePlaceholders({
               content: template?.content,
               values: {
@@ -139,12 +69,11 @@ export async function generateOTP({
             }),
           });
         } else {
-          await mailService?.notify(
-            otpTemplate({
-              email,
-              otp: result.otp,
-            }),
-          );
+          // MBI: French mail in the MBI layout when no ERP template is set.
+          await mailService?.notify({
+            to: email,
+            ...otpMail({otp: result.otp, scope}),
+          });
         }
       } catch (err) {
         console.error('[OTP] Failed to send OTP mail', err);

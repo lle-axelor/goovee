@@ -19,7 +19,8 @@ import {
 import {getAuthConfig} from './config';
 import {manager} from '@/tenant';
 import {withMattermostSync} from '@/lib/core/mattermost';
-import {APP_TITLE, RESET_PASSWORD} from '@/constants';
+import {RESET_PASSWORD} from '@/constants';
+import {resetPasswordMail} from '@/lib/mbi/mail';
 import {findInviteById} from '@/app/auth/register/common/orm/register';
 import {registerByInvite} from '@/lib/core/auth/orm';
 import {withBasePath} from '@/lib/core/path/base-path';
@@ -42,74 +43,6 @@ const ERROR_CODES = defineErrorCodes({
   USER_NOT_FOUND: 'User not found',
   PASSWORD_RESET_FAILED: 'Error resetting password. Try again.',
 });
-
-const resetPasswordEmailHTML = ({
-  otp,
-  email,
-  link,
-}: {
-  otp: string;
-  email: string;
-  link: string;
-}) => `
-      <!DOCTYPE html>
-      <html>
-      <head>
-          <title>${APP_TITLE} Password Reset</title>
-          <style>
-              body {
-                  font-family: Arial, sans-serif;
-                  line-height: 1.6;
-                  background-color: #f9f9f9;
-                  margin: 0;
-                  padding: 20px;
-              }
-              .container {
-                  text-align: center;
-                  max-width: 600px;
-                  margin: 0 auto;
-                  background: #ffffff;
-                  padding: 20px;
-                  border-radius: 8px;
-                  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-              }
-              .header {
-                  margin-bottom: 20px;
-              }
-              .button {
-                  display: inline-block;
-                  margin: 20px 0;
-                  padding: 12px 20px;
-                  background-color: #58d59d;
-                  color: #ffffff !important;
-                  text-decoration: none;
-                  border-radius: 5px;
-                  font-size: 16px;
-              }
-              .footer {
-                  font-size: 14px;
-                  color: #666666;
-                  margin-top: 20px;
-              }
-          </style>
-      </head>
-      <body>
-          <div class="container">
-              <div class="header">
-                  <h1>${APP_TITLE} Password Reset</h1>
-              </div>
-              <p>Dear User, We've received a request to reset the password for your account associated with ${email}. If you requested this change, please follow the instructions below:</p>
-              <p>To reset your password, click the link : <a href='${link}' target='_blank'>${link}</a></p>
-              <p>Your OTP for password reset is : <strong>${otp}</strong></p>
-              <p>This link will expire in 10 minutes, so be sure to reset your password before then.</p>
-              <p>If you did not request this change or believe this is a mistake, please ignore this email. Your account remains secure, and no changes will be made.</p>
-              <div class="footer">
-                  <p>Best regards,<br>The ${APP_TITLE} Team</p>
-              </div>
-          </div>
-      </body>
-      </html>
-      `;
 
 const credentials = {
   id: 'credentials',
@@ -583,10 +516,10 @@ const credentials = {
               });
 
               if (result?.otp) {
+                // MBI: French mail in the MBI layout.
                 await mailService?.notify({
-                  subject: `${APP_TITLE} Password Reset`,
                   to: email,
-                  html: resetPasswordEmailHTML({email, otp: result.otp, link}),
+                  ...resetPasswordMail({email, otp: result.otp, link}),
                 });
               }
             } catch (err) {

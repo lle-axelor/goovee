@@ -18,6 +18,7 @@ import {
 } from '@/utils/validators';
 import {User} from '@/types';
 import {APP_TITLE} from '@/constants';
+import {publicationMail} from '@/lib/mbi/mail';
 
 type App = NonNullable<Awaited<ReturnType<typeof findAppByCode>>>;
 
@@ -79,123 +80,28 @@ function chunkArray<T>(array: T[], size: number): T[][] {
   return result;
 }
 
-async function notificationTemplate({
-  user,
-  tenantId,
-  app,
-  entity,
-  sender,
-}: {
-  user: User;
-  tenantId: string;
-  app: App;
-  entity: any;
-  sender: string;
-}) {
-  return `<!DOCTYPE html>
-    <html>
-    <head>
-        <title>${await getTranslation(
-          {locale: user.locale, tenant: tenantId},
-          '{0} - Notifications from {1}',
-          app.name || '',
-          sender,
-        )}</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                line-height: 1.6;
-                background-color: #f9f9f9;
-                margin: 0;
-                padding: 20px;
-            }
-            .container {
-                text-align: center;
-                max-width: 600px;
-                margin: 0 auto;
-                background: #ffffff;
-                padding: 20px;
-                border-radius: 8px;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            }
-            .header {
-                margin-bottom: 20px;
-            }
-            .link {
-                display: inline-block;
-                color: #58d59d !important;
-                text-decoration: none;
-                font-size: 16px;
-            }
-            .footer {
-                font-size: 14px;
-                color: #666666;
-                margin-top: 20px;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>${await getTranslation(
-                  {locale: user.locale, tenant: tenantId},
-                  `You have received new notification from {0} {1}`,
-                  sender,
-                  app.name || '',
-                )}
-                </h1>
-            </div>
-            <a href="${entity?.route}" target="_blank" class="link">
-              ${entity?.route}
-            </a>
-            <div class="footer">
-                <p>${await getTranslation(
-                  {locale: user.locale, tenant: tenantId},
-                  'Best regards,',
-                )}<br>${await getTranslation(
-                  {locale: user.locale, tenant: tenantId},
-                  'The {0} Team',
-                  sender,
-                )}</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    `;
-}
-
 async function sendMail({
   user,
-  tenantId,
   mail,
   app,
   entity,
-  sender,
 }: {
   user: User;
-  tenantId: string;
   mail?: Mail | null;
   entity: {id: string; route: string};
   app: App;
-  sender: string;
 }) {
   const mailService = NotificationManager.getService(NotificationType.mail);
 
-  const html =
-    mail?.body ||
-    (await notificationTemplate({user, tenantId, app, entity, sender}));
-
+  // MBI: French mail in the MBI layout; the ERP message, if any, goes inside it.
   await mailService?.notify({
     to: user.email,
-    subject:
-      mail?.subject ||
-      (await getTranslation(
-        {locale: user.locale, tenant: tenantId},
-        '{0} - Notifications from {1}',
-        app.name || '',
-        sender,
-      )),
-    html: sanitizeHtml(html),
+    ...publicationMail({
+      appCode: app.code ?? '',
+      link: entity.route,
+      subject: mail?.subject,
+      bodyHtml: mail?.body ? sanitizeHtml(mail.body) : null,
+    }),
   });
 }
 
@@ -276,11 +182,9 @@ async function sendNotifications(data: {
         await Promise.all([
           sendMail({
             user,
-            tenantId,
             mail,
             entity,
             app,
-            sender: workspace.name || APP_TITLE,
           }),
           sendSystemNotification({
             user,

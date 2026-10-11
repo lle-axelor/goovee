@@ -48,3 +48,6 @@ public/sw*
 app/\[tenant]/\[workspace]/\(subapps)/website/common/assets/css
 
 .prettier-cache
+
+# MBI: e-mail previews (pnpm mbi:mail:preview)
+/.mbi-mail-preview

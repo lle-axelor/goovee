@@ -1,10 +1,10 @@
 // ---- CORE IMPORTS ---- //
 import {getSession} from '@/lib/core/auth';
 import NotificationManager, {NotificationType} from '@/lib/core/notification';
-import {html} from '@/utils/template-string';
+import sanitizeHtml from 'sanitize-html';
 import {findEvent} from '../orm/event';
 import {generateIcs} from './index';
-import {formatDate} from '@/lib/core/locale/server/formatters';
+import {eventRegistrationMail} from '@/lib/mbi/mail';
 import type {Client} from '@/goovee/.generated/client';
 import type {TenantConfig} from '@/tenant';
 import type {Workspace} from '@/orm/workspace';
@@ -23,138 +23,32 @@ type MailEvent = {
   eventLink: string;
 };
 
-export async function mailTemplate({
+/* MBI: French mail in the MBI layout. */
+export function mailTemplate({
   event,
   participant,
 }: {
   event: MailEvent;
   participant: Participant;
 }) {
-  const {
-    eventTitle,
-    eventPlace,
-    eventAllDay,
-    eventStartDateTime,
-    eventEndDateTime,
-    eventDescription,
-    eventLink,
-  } = event;
-
   const {name, surname, subscriptionSet = []} = participant;
-  const fullName = `${name} ${surname}`.trim();
+  const facilities = (subscriptionSet as Array<{facility?: string | null}>)
+    .map(subscription => subscription.facility?.trim())
+    .filter((facility): facility is string => Boolean(facility));
 
-  const formattedEventStartDateTime = await formatDate(
-    eventStartDateTime ?? '',
-    {
-      timezone: 'Europe/Paris',
-      dateFormat: 'YYYY-MM-DD HH:mm Z',
-    },
-  );
-  const formattedEventEndDateTime = await formatDate(eventEndDateTime ?? '', {
-    timezone: 'Europe/Paris',
-    dateFormat: 'YYYY-MM-DD HH:mm Z',
+  return eventRegistrationMail({
+    participantName: `${name ?? ''} ${surname ?? ''}`.trim(),
+    eventTitle: event.eventTitle ?? '',
+    start: event.eventStartDateTime,
+    end: event.eventEndDateTime,
+    allDay: event.eventAllDay,
+    place: event.eventPlace,
+    facilities,
+    descriptionHtml: event.eventDescription
+      ? sanitizeHtml(event.eventDescription)
+      : null,
+    link: event.eventLink,
   });
-  const dateDetails = eventAllDay
-    ? html`<strong>Date:</strong> ${formattedEventStartDateTime}`
-    : html`<strong>Date:</strong> ${formattedEventStartDateTime} -
-        ${formattedEventEndDateTime}`;
-
-  const subscriptionDetails = subscriptionSet?.length
-    ? (subscriptionSet as Array<{facility?: string | null}>)
-        .map(subscription => html`<li>${subscription.facility}</li>`)
-        .join('')
-    : null;
-
-  return html`
-    <!doctype html>
-    <html>
-      <head>
-        <style>
-          body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f9f9f9;
-            color: #333;
-            padding: 20px;
-          }
-          .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-          }
-          .header {
-            background: #5603ad;
-            color: #fff;
-            padding: 20px;
-            text-align: center;
-          }
-          .content {
-            padding: 20px;
-            line-height: 1.6;
-          }
-          .facilities-title {
-            margin: 0;
-          }
-          .facility-list {
-            margin: 0;
-            padding-left: 20px;
-          }
-          .btn-container {
-            text-align: center;
-            margin-top: 20px;
-          }
-          .event-btn {
-            background-color: #5603ad;
-            color: #fff !important;
-            padding: 12px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            display: inline-block;
-          }
-          .event-btn:hover {
-            background-color: #4a0293;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Welcome to the Event!</h1>
-          </div>
-          <div class="content">
-            <p>Hi <b>${fullName}</b>,</p>
-            <p>
-              Thank you for registering for our upcoming event. Here are the
-              details:
-            </p>
-            <p>
-              <strong>Event Name:</strong> ${eventTitle}<br />
-              ${dateDetails}<br />
-              ${eventPlace ? `<strong>Location:</strong> ${eventPlace}` : ''}
-            </p>
-            ${subscriptionDetails
-              ? `<p class="facilities-title"><strong>Facilities:</strong></p>
-                  <ul class="facility-list">${subscriptionDetails}</ul>`
-              : ''}
-            ${eventDescription ? `<p>${eventDescription}</p>` : ''}
-            <div class="btn-container">
-              <a
-                href="${eventLink}"
-                class="event-btn"
-                target="_blank"
-                rel="noopener noreferrer">
-                Go to Event
-              </a>
-            </div>
-            <p>We look forward to seeing you there!</p>
-          </div>
-        </div>
-      </body>
-    </html>
-  `;
 }
 
 export const generateRegistrationMailAction = async ({
@@ -199,15 +93,14 @@ export const generateRegistrationMailAction = async ({
     return;
   }
 
-  const subject = `🎉 You're Registered for "${event.eventTitle}"!`;
   const ics = generateIcs(event, participants);
 
   const mailPromises = participants.map(async participant => {
-    const emailContent = await mailTemplate({event, participant});
+    const {subject, html} = mailTemplate({event, participant});
     return mailService.notify({
       to: participant.emailAddress,
       subject,
-      html: emailContent,
+      html,
       icalEvent: {
         method: 'REQUEST',
         content: ics,
