@@ -59,6 +59,8 @@ export const ACCOUNT_GROUPS: AccountTabGroup[] = [
   'Team',
 ];
 
+/* MBI: no "Preferences" (single workspace, no language offered on the portal)
+ * nor "My apps" tab; their routes redirect to the personal settings. */
 export const ACCOUNT_TABS: AccountTab[] = [
   {
     key: 'personal',
@@ -68,15 +70,6 @@ export const ACCOUNT_TABS: AccountTab[] = [
     label: 'Personal settings',
     subtitle: 'Company identity',
     description: 'Company information shown across your workspace.',
-  },
-  {
-    key: 'preferences',
-    group: 'Account',
-    route: ROUTES.preferences,
-    icon: 'preferences',
-    label: 'Preferences',
-    subtitle: 'Default workspace and language',
-    description: 'Default behavior when you sign in.',
   },
   {
     key: 'password',
@@ -123,15 +116,6 @@ export const ACCOUNT_TABS: AccountTab[] = [
     label: 'Notifications',
     subtitle: 'Push and e-mail',
     description: 'Choose what you receive and where.',
-  },
-  {
-    key: 'apps',
-    group: 'Team',
-    route: ROUTES.apps,
-    icon: 'apps',
-    label: 'My apps',
-    subtitle: 'Visible applications',
-    description: 'Enable or hide applications in the side menu.',
   },
 ];
 
