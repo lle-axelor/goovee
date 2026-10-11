@@ -157,6 +157,35 @@ export function createStream(
   });
 }
 
+/**
+ * A `Content-Disposition` value that survives any file name. Header values are
+ * byte strings, so a raw name with a character above U+00FF (e.g. the typographic
+ * apostrophe of "Capture d’écran…") made `new Headers` throw and the download
+ * returned an error body instead of the file. An ASCII fallback is given in
+ * `filename`, the exact name in `filename*` (RFC 6266).
+ *
+ * Backported from upstream (#116828) without the rest of that change.
+ */
+export function contentDisposition(
+  kind: 'inline' | 'attachment',
+  fileName: string,
+): string {
+  /* Directory separators are dropped rather than replaced: they are not part of
+   * a file's name, and a browser saving the file would read them as a path. */
+  const name = fileName.replace(/[\\/]/g, '').trim() || 'download';
+
+  const ascii = name.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
+
+  /* Percent-encode everything the header grammar does not allow unencoded.
+   * `encodeURIComponent` leaves a handful of those behind. */
+  const encoded = encodeURIComponent(name).replace(
+    /['()*]/g,
+    character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+
+  return `${kind}; filename="${ascii}"; filename*=UTF-8''${encoded}`;
+}
+
 export async function streamFile({
   fileName,
   filePath,
@@ -176,7 +205,7 @@ export async function streamFile({
     const res = new NextResponse(data, {
       status: 200,
       headers: new Headers({
-        'content-disposition': `attachment; filename=${fileName}`,
+        'content-disposition': contentDisposition('attachment', fileName),
         'content-type': fileType,
         'content-length': stats.size + '',
         'access-control-expose-headers': 'Content-Disposition',
