@@ -86,8 +86,11 @@ export const RegistrationForm = ({
   const isLoggedIn = !!user?.emailAddress;
   //NOTE: temprorary disable contacts list
   const showContactsList = false && isLoggedIn && !user?.isContact;
-  const canPay = defaultPrice || facilityList?.length;
-  const eventPrice = defaultPrice ? Number(displayAti ?? 0) : 0;
+  /* MBI: the price arrives as a decimal string ("0.00" is truthy), so a free
+   * event showed a 0.00 price block; test the number instead. */
+  const hasPrice = Number(defaultPrice ?? 0) > 0;
+  const canPay = hasPrice || facilityList?.length;
+  const eventPrice = hasPrice ? Number(displayAti ?? 0) : 0;
 
   const isCompanyOrAddressRequired = config.isCompanyOrAddressRequired;
 
@@ -425,7 +428,7 @@ export const RegistrationForm = ({
         {eventCategorySet?.length ? (
           <BadgeList items={eventCategorySet ?? []} />
         ) : null}
-        {defaultPrice ? (
+        {hasPrice ? (
           <div className="mt-1 rounded-xl border border-ink-100 bg-ink-25 px-4 py-3.5 flex flex-wrap items-baseline gap-x-6 gap-y-1">
             <span className="text-[13px] font-semibold text-ink-600">
               {i18n.t('Price (incl. tax)')}

@@ -630,7 +630,6 @@ function MagazineCard({
   event,
   workspaceURI,
   seeLabel,
-  freeLabel,
   registeredBadge,
   isPast,
 }: {
@@ -702,13 +701,14 @@ function MagazineCard({
         </div>
         {!isPast && (
           <div className="mt-auto pt-3 border-t border-ink-100 flex items-center justify-between">
-            <span
-              className={cn(
-                'text-[13px] font-bold tabular-nums',
-                price.value === 0 ? 'text-mint-600' : 'text-ink-900',
-              )}>
-              {price.value === 0 ? freeLabel : (price.display ?? freeLabel)}
-            </span>
+            {/* MBI: no price and no "Free" mention for a free event. */}
+            {price.value > 0 && price.display ? (
+              <span className="text-[13px] font-bold tabular-nums text-ink-900">
+                {price.display}
+              </span>
+            ) : (
+              <span />
+            )}
             <span className="inline-flex items-center gap-1 text-xs font-semibold text-royal">
               {seeLabel}
               <MdArrowForward className="text-xs" />

@@ -167,11 +167,6 @@ export function EventDetails({
                     {category.name}
                   </span>
                 )}
-                {isFree && (
-                  <span className="inline-flex items-center px-3 py-[5px] rounded-full bg-mint-500 text-white text-[11px] font-bold uppercase tracking-[0.04em]">
-                    {i18n.t('Free')}
-                  </span>
-                )}
                 {isRegistered && (
                   <span className="inline-flex items-center px-3 py-[5px] rounded-full bg-white/[0.18] border border-white/30 text-white text-[11px] font-bold uppercase tracking-[0.04em]">
                     {i18n.t('Registered')}
@@ -317,23 +312,22 @@ export function EventDetails({
 
               {/* Body */}
               <div className="p-[22px]">
-                <div className="mb-[18px]">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.06em] text-ink-500">
-                    {i18n.t('Price (incl. tax)')}
-                  </div>
-                  <div
-                    className={cn(
-                      'mt-0.5 text-[32px] font-extrabold tracking-[-0.02em] leading-[1.1] tabular-nums',
-                      isFree ? 'text-mint-600' : 'text-ink-900',
-                    )}>
-                    {isFree ? i18n.t('Free') : formattedDefaultPriceAti}
-                  </div>
-                  {!isFree && formattedDefaultPrice && (
-                    <div className="text-xs text-ink-500 mt-0.5 tabular-nums">
-                      {formattedDefaultPrice} {i18n.t('excl. tax')}
+                {/* MBI: no price and no "Free" mention for a free event. */}
+                {!isFree && (
+                  <div className="mb-[18px]">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.06em] text-ink-500">
+                      {i18n.t('Price (incl. tax)')}
                     </div>
-                  )}
-                </div>
+                    <div className="mt-0.5 text-[32px] font-extrabold tracking-[-0.02em] leading-[1.1] tabular-nums text-ink-900">
+                      {formattedDefaultPriceAti}
+                    </div>
+                    {formattedDefaultPrice && (
+                      <div className="text-xs text-ink-500 mt-0.5 tabular-nums">
+                        {formattedDefaultPrice} {i18n.t('excl. tax')}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {isRegistrationAllow ? (
                   <Link
