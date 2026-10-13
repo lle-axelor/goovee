@@ -58,7 +58,8 @@ function BrandPanel({workspaceName}: {workspaceName: string | null}) {
       </div>
 
       <div className="relative text-[12px] text-white/60">
-        {`${i18n.t('Powered by')} ${APP_TITLE}`}
+        {/* MBI: APP_TITLE is now the portal brand; the credit stays Axelor. */}
+        {`${i18n.t('Powered by')} Axelor`}
       </div>
     </div>
   );
